@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ChangeEvent } from "react";
-import { ArrowLeft, ArrowDown, ArrowUp, Plus, Trash2, Upload, History, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowDown, ArrowUp, Plus, Trash2, Upload, History, RotateCcw, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { draftScenesWithAi } from "@/lib/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,6 +101,15 @@ function Scenes({ projectId }: { projectId: string }) {
   const { data: scenes = [] } = useQuery(scenesQ(projectId));
   const refresh = () => qc.invalidateQueries({ queryKey: ["scenes", projectId] });
   const total = scenes.reduce((s, x) => s + Number(x.duration_seconds), 0);
+  const draftFn = useServerFn(draftScenesWithAi);
+  const [drafting, setDrafting] = useState(false);
+  const { data: cost } = useQuery({
+    queryKey: ["ai_task_cost", "draft_scenes"],
+    queryFn: async () => {
+      const { data } = await supabase.from("ai_tasks").select("credit_cost").eq("slug", "draft_scenes").maybeSingle();
+      return data?.credit_cost ?? null;
+    },
+  });
 
   async function add() {
     const { error } = await supabase.from("scenes").insert({ project_id: projectId, position: scenes.length, title: `Scene ${scenes.length + 1}` });
@@ -120,11 +131,33 @@ function Scenes({ projectId }: { projectId: string }) {
     refresh();
   }
 
+  async function draftWithAi() {
+    setDrafting(true);
+    try {
+      const res = await draftFn({ data: { projectId, sceneCount: 6 } });
+      if (!res.ok) toast.error(res.error);
+      else toast.success(`Drafted ${res.count} scenes`);
+    } catch {
+      toast.error("AI generation failed");
+    } finally {
+      setDrafting(false);
+      refresh();
+      qc.invalidateQueries({ queryKey: ["profile"] });
+      qc.invalidateQueries({ queryKey: ["credit_transactions"] });
+    }
+  }
+
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <p className="font-mono text-xs text-muted-foreground">{scenes.length} SCENES · {Math.round(total)}s TOTAL</p>
-        <Button variant="signal" size="sm" onClick={add}><Plus /> Add scene</Button>
+        <div className="flex gap-2">
+          <Button variant="panel" size="sm" onClick={draftWithAi} disabled={drafting}>
+            {drafting ? <Loader2 className="animate-spin" /> : <Sparkles />}
+            {drafting ? "Drafting…" : `Draft scenes with AI · ${cost ?? "…"} cr`}
+          </Button>
+          <Button variant="signal" size="sm" onClick={add}><Plus /> Add scene</Button>
+        </div>
       </div>
       {scenes.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">No scenes yet. Add your first scene.</div>
