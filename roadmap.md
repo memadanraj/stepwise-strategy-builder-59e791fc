@@ -4,7 +4,7 @@
 - [x] Phase 02 Authentication — signup, login, Google, password reset
 - [x] Phase 03 Dashboard — sidebar, topbar, projects list, settings
 - [x] Phase 04 Project engine — versions, scenes, assets
-- [ ] Phase 05 AI gateway — model registry, generation jobs, credit reservation
+- [x] Phase 05 AI gateway — model registry, generation jobs, credit reservation
 - [ ] Phase 06 AI writing — research, titles, scripts, editor
 - [ ] Phase 07 Visuals — images, styles, characters, video
 - [ ] Phase 08 Audio — voice, music, SFX

@@ -14,3 +14,4 @@
 - Subscription plans and limits live in the `plans` table, never hard-coded in frontend — spec requires DB-driven pricing.
 - Roles live only in `user_roles` with `has_role()`; profile plan/credit fields are trigger-protected from user edits — prevents privilege/credit escalation.
 - Styling uses semantic tokens in src/styles.css and Button variants (`signal`, `panel`); no raw color classes in components — keeps theming consistent.
+- AI calls run in server functions; credits are reserved via `start_generation_job` and settled only server-side via `complete_generation_job`/`fail_generation_job` (auto-refund) — users can never mint or refund credits themselves.
