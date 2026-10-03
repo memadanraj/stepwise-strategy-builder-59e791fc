@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_tasks: {
+        Row: {
+          created_at: string
+          credit_cost: number
+          description: string | null
+          is_active: boolean
+          model: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          credit_cost: number
+          description?: string | null
+          is_active?: boolean
+          model: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          credit_cost?: number
+          description?: string | null
+          is_active?: boolean
+          model?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       assets: {
         Row: {
           created_at: string
@@ -88,6 +118,66 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      generation_jobs: {
+        Row: {
+          created_at: string
+          credits_reserved: number
+          error: string | null
+          finished_at: string | null
+          id: string
+          input: Json
+          output: Json | null
+          project_id: string | null
+          started_at: string | null
+          status: string
+          task_slug: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_reserved?: number
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          output?: Json | null
+          project_id?: string | null
+          started_at?: string | null
+          status?: string
+          task_slug: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_reserved?: number
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          output?: Json | null
+          project_id?: string | null
+          started_at?: string | null
+          status?: string
+          task_slug?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_jobs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_jobs_task_slug_fkey"
+            columns: ["task_slug"]
+            isOneToOne: false
+            referencedRelation: "ai_tasks"
+            referencedColumns: ["slug"]
+          },
+        ]
       }
       plans: {
         Row: {
@@ -323,6 +413,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_generation_job: {
+        Args: { _job_id: string; _output: Json }
+        Returns: undefined
+      }
+      fail_generation_job: {
+        Args: { _error: string; _job_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -331,6 +429,10 @@ export type Database = {
         Returns: boolean
       }
       owns_project: { Args: { _project_id: string }; Returns: boolean }
+      start_generation_job: {
+        Args: { _input: Json; _project_id: string; _task_slug: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
