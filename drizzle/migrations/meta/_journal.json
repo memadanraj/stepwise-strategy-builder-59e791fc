@@ -29,6 +29,13 @@
       "when": 1791000739197,
       "tag": "0003_ai_gateway_credit_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791000945251,
+      "tag": "0004_writing_suite",
+      "breakpoints": true
     }
   ]
 }

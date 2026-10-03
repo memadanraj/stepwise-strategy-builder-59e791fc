@@ -307,6 +307,41 @@ export type Database = {
           },
         ]
       }
+      project_writing: {
+        Row: {
+          hooks: Json | null
+          project_id: string
+          research: Json | null
+          script: string | null
+          titles: Json | null
+          updated_at: string
+        }
+        Insert: {
+          hooks?: Json | null
+          project_id: string
+          research?: Json | null
+          script?: string | null
+          titles?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          hooks?: Json | null
+          project_id?: string
+          research?: Json | null
+          script?: string | null
+          titles?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_writing_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string
