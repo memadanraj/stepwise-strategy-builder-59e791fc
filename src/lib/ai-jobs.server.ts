@@ -34,7 +34,7 @@ export async function runAiTask<T, R>(opts: {
       model: (task as { model?: string } | null)?.model ?? "openai/gpt-6-astra",
       schemaName: opts.schemaName,
       schema: opts.schema,
-      instructions: opts.instructions,
+      instructions: `${opts.instructions}\n\nNever ask clarifying questions or request more information. If the idea is vague or misspelled, pick the most plausible interpretation and fully complete the task. Fill every field with real content.`,
       input: opts.prompt,
     });
     const value = await opts.persist(result);
