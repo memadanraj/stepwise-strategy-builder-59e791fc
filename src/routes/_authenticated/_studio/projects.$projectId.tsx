@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { draftScenesWithAi } from "@/lib/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { WritingPanel } from "@/components/studio/WritingPanel";
+import { SceneImage, StylePicker, useSceneImages, useImageCost } from "@/components/studio/SceneImage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -91,7 +92,7 @@ function ProjectPage() {
       </div>
       <div className="mt-6">
         {tab === "writing" && <WritingPanel project={project} onScenesChanged={() => setTab("scenes")} />}
-        {tab === "scenes" && <Scenes projectId={projectId} />}
+        {tab === "scenes" && <><StylePicker project={project} /><Scenes projectId={projectId} vertical={project.format === "short"} /></>}
         {tab === "assets" && <Assets project={project} />}
         {tab === "versions" && <Versions project={project} />}
       </div>
@@ -99,9 +100,11 @@ function ProjectPage() {
   );
 }
 
-function Scenes({ projectId }: { projectId: string }) {
+function Scenes({ projectId, vertical }: { projectId: string; vertical: boolean }) {
   const qc = useQueryClient();
   const { data: scenes = [] } = useQuery(scenesQ(projectId));
+  const { data: images = {} } = useSceneImages(projectId);
+  const { data: imageCost } = useImageCost();
   const refresh = () => qc.invalidateQueries({ queryKey: ["scenes", projectId] });
   const total = scenes.reduce((s, x) => s + Number(x.duration_seconds), 0);
   const draftFn = useServerFn(draftScenesWithAi);
@@ -168,7 +171,8 @@ function Scenes({ projectId }: { projectId: string }) {
         <div className="space-y-3">
           {scenes.map((s, i) => (
             <SceneRow key={s.id} scene={s} index={i} last={i === scenes.length - 1}
-              onMove={(d) => move(i, d)} onDelete={() => remove(s.id)} onSaved={refresh} />
+              onMove={(d) => move(i, d)} onDelete={() => remove(s.id)} onSaved={refresh}
+              image={<SceneImage scene={s} url={images[s.id]} cost={imageCost} vertical={vertical} />} />
           ))}
         </div>
       )}
@@ -176,8 +180,8 @@ function Scenes({ projectId }: { projectId: string }) {
   );
 }
 
-function SceneRow({ scene, index, last, onMove, onDelete, onSaved }: {
-  scene: Tables<"scenes">; index: number; last: boolean;
+function SceneRow({ scene, index, last, onMove, onDelete, onSaved, image }: {
+  scene: Tables<"scenes">; index: number; last: boolean; image: React.ReactNode;
   onMove: (d: -1 | 1) => void; onDelete: () => void; onSaved: () => void;
 }) {
   const [title, setTitle] = useState(scene.title);
@@ -207,9 +211,12 @@ function SceneRow({ scene, index, last, onMove, onDelete, onSaved }: {
         <Button size="icon" variant="ghost" disabled={last} onClick={() => onMove(1)} aria-label="Move down"><ArrowDown /></Button>
         <Button size="icon" variant="ghost" onClick={onDelete} aria-label="Delete scene"><Trash2 /></Button>
       </div>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
-        <Textarea rows={3} placeholder="Narration / voiceover" value={narration} onChange={(e) => setNarration(e.target.value)} />
-        <Textarea rows={3} placeholder="Visual description" value={visual} onChange={(e) => setVisual(e.target.value)} />
+      <div className="mt-3 flex flex-col gap-3 md:flex-row">
+        {image}
+        <div className="grid flex-1 gap-3 md:grid-cols-2">
+          <Textarea rows={4} placeholder="Narration / voiceover" value={narration} onChange={(e) => setNarration(e.target.value)} />
+          <Textarea rows={4} placeholder="Visual description" value={visual} onChange={(e) => setVisual(e.target.value)} />
+        </div>
       </div>
       {dirty && <div className="mt-3 flex justify-end"><Button size="sm" variant="signal" onClick={save}>Save scene</Button></div>}
     </div>
