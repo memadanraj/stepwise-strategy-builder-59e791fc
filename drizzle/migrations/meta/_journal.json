@@ -36,6 +36,13 @@
       "when": 1791000945251,
       "tag": "0004_writing_suite",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791079533816,
+      "tag": "0005_visual_styles_scene_images",
+      "breakpoints": true
     }
   ]
 }
