@@ -55,7 +55,7 @@ export function StylePicker({ project }: { project: Tables<"projects"> }) {
   );
 }
 
-export function SceneImage({ scene, url, cost, vertical }: { scene: Tables<"scenes">; url?: string; cost: number | null | undefined; vertical: boolean }) {
+export function SceneImage({ scene, url, cost, vertical }: { scene: Tables<"scenes">; url?: string | undefined; cost: number | null | undefined; vertical: boolean }) {
   const qc = useQueryClient();
   const gen = useServerFn(generateSceneImage);
   const [busy, setBusy] = useState(false);
