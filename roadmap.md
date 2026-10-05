@@ -7,11 +7,11 @@
 - [x] Phase 05 AI gateway — model registry, generation jobs, credit reservation
 - [x] Phase 06 AI writing — research, titles, scripts, editor
 - [x] Phase 07 Visuals — images, styles, characters, video
-- [ ] Phase 08 Audio — voice, music, SFX
-- [ ] Phase 09 Editor — timeline, preview, captions
+- [x] Phase 08 Audio — voice, music, SFX
+- [x] Phase 09 Editor — timeline, preview, captions
 - [x] Phase 10 Rendering — queue, renderer, exports
-- [ ] Phase 11 Thumbnail studio
-- [ ] Phase 12 YouTube — OAuth, publishing, analytics
-- [ ] Phase 13 Billing
-- [ ] Phase 14 Admin
-- [ ] Phase 15 Production hardening
+- [x] Phase 11 Thumbnail studio
+- [x] Phase 12 YouTube — OAuth, publishing, analytics
+- [x] Phase 13 Billing
+- [x] Phase 14 Admin
+- [x] Phase 15 Production hardening
