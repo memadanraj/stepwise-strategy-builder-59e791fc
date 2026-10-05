@@ -80,31 +80,68 @@ export function StylePicker({ project }: { project: Tables<"projects"> }) {
   );
 }
 
-export function SceneImage({ scene, url, clipUrl, cost, clipCost, vertical }: { scene: Tables<"scenes">; url?: string | undefined; clipUrl?: string | undefined; cost: number | null | undefined; clipCost: number | null | undefined; vertical: boolean }) {
+export function SceneImage({ scene, url, clipUrl, cost, clipCost, vertical }: {
+  scene: Tables<"scenes">;
+  url?: string;
+  clipUrl?: string;
+  cost: number | null | undefined;
+  clipCost: number | null | undefined;
+  vertical: boolean;
+}) {
   const qc = useQueryClient();
   const gen = useServerFn(generateSceneImage);
   const clipGen = useServerFn(generateSceneClip);
-  const [busy, setBusy] = useState(false);
-  async function run() {
-    setBusy(true);
+  const [busy, setBusy] = useState<"image" | "clip" | null>(null);
+
+  async function runImage() {
+    setBusy("image");
     try {
       const res = await gen({ data: { sceneId: scene.id } });
       if (!res.ok) toast.error(res.error); else toast.success("Image ready");
     } catch { toast.error("Image generation failed"); }
     finally {
-      setBusy(false);
-      for (const k of [["scene_images", scene.project_id], ["assets", scene.project_id], ["profile"], ["credit_transactions"]]) qc.invalidateQueries({ queryKey: k });
+      setBusy(null);
+      for (const k of [["scene_images", scene.project_id], ["assets", scene.project_id], ["profile"], ["credit_transactions"]]) {
+        qc.invalidateQueries({ queryKey: k });
+      }
     }
   }
+
+  async function runClip() {
+    setBusy("clip");
+    try {
+      const res = await clipGen({ data: { sceneId: scene.id } });
+      if (!res.ok) toast.error(res.error); else toast.success("Clip ready");
+    } catch { toast.error("Clip generation failed"); }
+    finally {
+      setBusy(null);
+      for (const k of [["scene_clips", scene.project_id], ["assets", scene.project_id], ["profile"], ["credit_transactions"]]) {
+        qc.invalidateQueries({ queryKey: k });
+      }
+    }
+  }
+
   return (
-    <div className={`relative shrink-0 overflow-hidden rounded-lg border border-border bg-background ${vertical ? "aspect-[9/16] w-28" : "aspect-video w-48"}`}>
-      {url ? <img src={url} alt={scene.title} className="size-full object-cover" /> :
-        <div className="flex size-full items-center justify-center text-muted-foreground"><ImageIcon className="size-6" /></div>}
-      <Button size="sm" variant="panel" disabled={busy} onClick={run}
-        className="absolute bottom-1 left-1 right-1 h-7 text-[11px]">
-        {busy ? <Loader2 className="animate-spin" /> : url ? <RefreshCw /> : <ImageIcon />}
-        {busy ? "Painting…" : `${url ? "Redo" : "Generate"} · ${cost ?? "…"} cr`}
-      </Button>
+    <div className={`relative shrink-0 overflow-hidden rounded-lg border border-border bg-background ${vertical ? "aspect-[9/16] w-36" : "aspect-video w-56"}`}>
+      {clipUrl ? (
+        <video src={clipUrl} controls className="size-full object-cover" />
+      ) : url ? (
+        <img src={url} alt={scene.title} className="size-full object-cover" />
+      ) : (
+        <div className="flex size-full items-center justify-center text-muted-foreground">
+          <ImageIcon className="size-6" />
+        </div>
+      )}
+      <div className="absolute bottom-1 left-1 right-1 flex gap-1">
+        <Button size="sm" variant="panel" disabled={!!busy} onClick={runImage} className="h-7 flex-1 text-[11px]">
+          {busy === "image" ? <Loader2 className="animate-spin" /> : url ? <RefreshCw /> : <ImageIcon />}
+          {busy === "image" ? "Painting…" : `${url ? "Redo" : "Generate"} · ${cost ?? "…"} cr`}
+        </Button>
+        <Button size="sm" variant="panel" disabled={!!busy} onClick={runClip} className="h-7 flex-1 text-[11px]">
+          {busy === "clip" ? <Loader2 className="animate-spin" /> : <Film />}
+          {busy === "clip" ? "Generating…" : `${clipUrl ? "Redo" : "Clip"} · ${clipCost ?? "…"} cr`}
+        </Button>
+      </div>
     </div>
   );
 }
