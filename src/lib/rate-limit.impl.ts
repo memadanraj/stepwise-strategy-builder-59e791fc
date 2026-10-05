@@ -1,4 +1,3 @@
-import '@tanstack/react-start/server-only';
 import { getRequest } from "@tanstack/react-start/server";
 
 type Bucket={started:number;count:number};
