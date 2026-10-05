@@ -1,3 +1,23 @@
+-- Phase 07: Visuals schema completion for the merged target migration
+alter table public.projects add column if not exists visual_style text not null default 'cinematic';
+alter table public.scenes add column if not exists image_path text;
+
+create table if not exists public.characters (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  name text not null,
+  description text,
+  visual_notes text,
+  created_at timestamptz not null default now()
+);
+grant select,insert,update,delete on public.characters to authenticated;
+grant all on public.characters to service_role;
+alter table public.characters enable row level security;
+drop policy if exists "Users manage characters of own projects" on public.characters;
+create policy "Users manage characters of own projects" on public.characters for all to authenticated
+using (exists (select 1 from public.projects p where p.id = project_id and p.user_id = auth.uid()))
+with check (exists (select 1 from public.projects p where p.id = project_id and p.user_id = auth.uid()));
+
 -- Phase 08: Audio Studio
 create table if not exists public.voices (
   id uuid primary key default gen_random_uuid(),
