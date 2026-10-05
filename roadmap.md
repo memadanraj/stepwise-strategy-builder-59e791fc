@@ -6,10 +6,10 @@
 - [x] Phase 04 Project engine — versions, scenes, assets
 - [x] Phase 05 AI gateway — model registry, generation jobs, credit reservation
 - [x] Phase 06 AI writing — research, titles, scripts, editor
-- [ ] Phase 07 Visuals — images, styles, characters, video
+- [x] Phase 07 Visuals — images, styles, characters, video
 - [ ] Phase 08 Audio — voice, music, SFX
 - [ ] Phase 09 Editor — timeline, preview, captions
-- [ ] Phase 10 Rendering — queue, renderer, exports
+- [x] Phase 10 Rendering — queue, renderer, exports
 - [ ] Phase 11 Thumbnail studio
 - [ ] Phase 12 YouTube — OAuth, publishing, analytics
 - [ ] Phase 13 Billing
