@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ImageIcon, Loader2, RefreshCw } from "lucide-react";
+import { Film, ImageIcon, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { generateSceneImage } from "@/lib/visuals.functions";
+import { generateSceneClip, generateSceneImage } from "@/lib/visuals.functions";
 import { VISUAL_STYLES, type VisualStyle } from "@/lib/visual-styles";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -25,6 +25,31 @@ export function useSceneImages(projectId: string) {
       const byPath = new Map((signed ?? []).map((s) => [s.path, s.signedUrl]));
       return Object.fromEntries([...latest].map(([sid, p]) => [sid, byPath.get(p) ?? ""])) as Record<string, string>;
     },
+  });
+}
+
+export function useSceneClips(projectId: string) {
+  return useQuery({
+    queryKey: ["scene_clips", projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("assets").select("id,scene_id,storage_path,created_at")
+        .eq("project_id", projectId).eq("kind", "video").not("scene_id", "is", null).order("created_at", { ascending: false });
+      if (error) throw error;
+      const latest = new Map<string, string>();
+      for (const a of data) if (a.scene_id && a.storage_path && !latest.has(a.scene_id)) latest.set(a.scene_id, a.storage_path);
+      const paths = [...latest.values()];
+      if (!paths.length) return {} as Record<string, string>;
+      const { data: signed } = await supabase.storage.from("project-assets").createSignedUrls(paths, 3600);
+      const byPath = new Map((signed ?? []).map((s) => [s.path, s.signedUrl]));
+      return Object.fromEntries([...latest].map(([sid, p]) => [sid, byPath.get(p) ?? ""])) as Record<string, string>;
+    },
+  });
+}
+
+export function useClipCost() {
+  return useQuery({
+    queryKey: ["ai_task_cost", "generate_clip"],
+    queryFn: async () => (await supabase.from("ai_tasks").select("credit_cost").eq("slug", "generate_clip").maybeSingle()).data?.credit_cost ?? null,
   });
 }
 
@@ -55,9 +80,10 @@ export function StylePicker({ project }: { project: Tables<"projects"> }) {
   );
 }
 
-export function SceneImage({ scene, url, cost, vertical }: { scene: Tables<"scenes">; url?: string | undefined; cost: number | null | undefined; vertical: boolean }) {
+export function SceneImage({ scene, url, clipUrl, cost, clipCost, vertical }: { scene: Tables<"scenes">; url?: string | undefined; clipUrl?: string | undefined; cost: number | null | undefined; clipCost: number | null | undefined; vertical: boolean }) {
   const qc = useQueryClient();
   const gen = useServerFn(generateSceneImage);
+  const clipGen = useServerFn(generateSceneClip);
   const [busy, setBusy] = useState(false);
   async function run() {
     setBusy(true);
