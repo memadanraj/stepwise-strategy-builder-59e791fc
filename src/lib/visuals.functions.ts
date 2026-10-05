@@ -34,7 +34,7 @@ function clipSeconds(sceneDuration: number): "4" | "6" | "8" {
 }
 
 async function fetchMediaBytes(url: string, apiKey: string): Promise<Buffer | null> {
-  const headerOptions = [
+  const headerOptions: Record<string, string>[] = [
     {},
     {
       Authorization: `Bearer ${apiKey}`,
@@ -87,7 +87,7 @@ function styleDirective(style: string) {
     retro: "retro 80s poster style, grain, neon accents",
     darkdoc: "dark documentary mood, moody shadows, desaturated tones",
   };
-  return map[style] ?? map.cinematic!;
+  return map[style] ?? map["cinematic"]!;
 }
 
 function composePrompt(project: any, characters: any[], visualPrompt: string) {

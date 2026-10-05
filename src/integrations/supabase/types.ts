@@ -92,40 +92,29 @@ export type Database = {
           },
         ]
       }
-      caption_styles: {
+      billing_events: {
         Row: {
-          created_at: string
+          event_type: string
           id: string
-          is_default: boolean
-          name: string
-          project_id: string
-          style: Json
+          metadata: Json
+          processed_at: string
+          stripe_event_id: string
         }
         Insert: {
-          created_at?: string
+          event_type: string
           id?: string
-          is_default?: boolean
-          name: string
-          project_id: string
-          style?: Json
+          metadata?: Json
+          processed_at?: string
+          stripe_event_id: string
         }
         Update: {
-          created_at?: string
+          event_type?: string
           id?: string
-          is_default?: boolean
-          name?: string
-          project_id?: string
-          style?: Json
+          metadata?: Json
+          processed_at?: string
+          stripe_event_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "caption_styles_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       captions: {
         Row: {
@@ -218,6 +207,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      credit_packs: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          is_active: boolean
+          name: string
+          price_cents: number
+          slug: string
+          sort_order: number
+          stripe_price_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price_cents: number
+          slug: string
+          sort_order?: number
+          stripe_price_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_cents?: number
+          slug?: string
+          sort_order?: number
+          stripe_price_id?: string | null
+        }
+        Relationships: []
       }
       credit_transactions: {
         Row: {
@@ -465,6 +490,7 @@ export type Database = {
           render_priority: number
           slug: string
           sort_order: number
+          stripe_price_id: string | null
           tagline: string | null
           youtube_channels: number
         }
@@ -484,6 +510,7 @@ export type Database = {
           render_priority?: number
           slug: string
           sort_order?: number
+          stripe_price_id?: string | null
           tagline?: string | null
           youtube_channels?: number
         }
@@ -503,6 +530,7 @@ export type Database = {
           render_priority?: number
           slug?: string
           sort_order?: number
+          stripe_price_id?: string | null
           tagline?: string | null
           youtube_channels?: number
         }
@@ -927,6 +955,86 @@ export type Database = {
           },
         ]
       }
+      stripe_customers: {
+        Row: {
+          created_at: string
+          email: string | null
+          stripe_customer_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          stripe_customer_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          stripe_customer_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stripe_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          metadata: Json
+          plan_slug: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          metadata?: Json
+          plan_slug: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          metadata?: Json
+          plan_slug?: string
+          status?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_subscriptions_plan_slug_fkey"
+            columns: ["plan_slug"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       timeline_clips: {
         Row: {
           asset_id: string | null
@@ -1328,6 +1436,214 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      youtube_analytics_daily: {
+        Row: {
+          average_view_duration_seconds: number | null
+          channel_id: string | null
+          comments: number
+          created_at: string
+          day: string
+          estimated_minutes_watched: number | null
+          id: string
+          likes: number
+          metadata: Json
+          subscribers_gained: number
+          subscribers_lost: number
+          updated_at: string
+          user_id: string
+          views: number
+          youtube_video_id: string | null
+        }
+        Insert: {
+          average_view_duration_seconds?: number | null
+          channel_id?: string | null
+          comments?: number
+          created_at?: string
+          day: string
+          estimated_minutes_watched?: number | null
+          id?: string
+          likes?: number
+          metadata?: Json
+          subscribers_gained?: number
+          subscribers_lost?: number
+          updated_at?: string
+          user_id: string
+          views?: number
+          youtube_video_id?: string | null
+        }
+        Update: {
+          average_view_duration_seconds?: number | null
+          channel_id?: string | null
+          comments?: number
+          created_at?: string
+          day?: string
+          estimated_minutes_watched?: number | null
+          id?: string
+          likes?: number
+          metadata?: Json
+          subscribers_gained?: number
+          subscribers_lost?: number
+          updated_at?: string
+          user_id?: string
+          views?: number
+          youtube_video_id?: string | null
+        }
+        Relationships: []
+      }
+      youtube_connections: {
+        Row: {
+          access_token_enc: string | null
+          access_token_expires_at: string | null
+          channel_id: string
+          channel_thumbnail_url: string | null
+          channel_title: string | null
+          created_at: string
+          id: string
+          refresh_token_enc: string
+          scopes: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token_enc?: string | null
+          access_token_expires_at?: string | null
+          channel_id: string
+          channel_thumbnail_url?: string | null
+          channel_title?: string | null
+          created_at?: string
+          id?: string
+          refresh_token_enc: string
+          scopes?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token_enc?: string | null
+          access_token_expires_at?: string | null
+          channel_id?: string
+          channel_thumbnail_url?: string | null
+          channel_title?: string | null
+          created_at?: string
+          id?: string
+          refresh_token_enc?: string
+          scopes?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      youtube_oauth_states: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          return_path: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          return_path?: string
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          return_path?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      youtube_publications: {
+        Row: {
+          category_id: string
+          created_at: string
+          description: string | null
+          error: string | null
+          export_id: string | null
+          id: string
+          metadata: Json
+          privacy_status: string
+          project_id: string
+          published_at: string | null
+          status: string
+          tags: string[]
+          thumbnail_asset_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          youtube_url: string | null
+          youtube_video_id: string | null
+        }
+        Insert: {
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          error?: string | null
+          export_id?: string | null
+          id?: string
+          metadata?: Json
+          privacy_status?: string
+          project_id: string
+          published_at?: string | null
+          status?: string
+          tags?: string[]
+          thumbnail_asset_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          youtube_url?: string | null
+          youtube_video_id?: string | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          error?: string | null
+          export_id?: string | null
+          id?: string
+          metadata?: Json
+          privacy_status?: string
+          project_id?: string
+          published_at?: string | null
+          status?: string
+          tags?: string[]
+          thumbnail_asset_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          youtube_url?: string | null
+          youtube_video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "youtube_publications_export_id_fkey"
+            columns: ["export_id"]
+            isOneToOne: false
+            referencedRelation: "exports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "youtube_publications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "youtube_publications_thumbnail_asset_id_fkey"
+            columns: ["thumbnail_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

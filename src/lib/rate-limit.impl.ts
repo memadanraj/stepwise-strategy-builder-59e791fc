@@ -1,5 +1,3 @@
-import '@tanstack/react-start/server-only';
-import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 
 type Bucket={started:number;count:number};
@@ -15,7 +13,7 @@ function clientKey(){
     ?? "unknown";
 }
 
-export const rateLimitServerFunctions=createMiddleware({type:"function"}).server(async({next})=>{
+export async function rateLimit(next:()=>Promise<any>){
   const request=getRequest();
   const key=`${clientKey()}:${new URL(request.url).pathname}`;
   const now=Date.now();
@@ -31,4 +29,4 @@ export const rateLimitServerFunctions=createMiddleware({type:"function"}).server
     throw new Response("Too many requests",{status:429,headers:{"Retry-After":String(retry),"Cache-Control":"no-store"}});
   }
   return next();
-});
+}

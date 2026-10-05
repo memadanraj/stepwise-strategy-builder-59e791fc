@@ -2,8 +2,7 @@ import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/r
 
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
-import { rateLimitServerFunctions } from "./lib/rate-limit.server";
-import { reportServerError } from "./lib/observability.server";
+import { rateLimitServerFunctions, reportServerError } from "./lib/server-middleware";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {

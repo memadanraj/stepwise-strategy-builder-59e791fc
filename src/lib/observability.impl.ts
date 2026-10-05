@@ -1,4 +1,3 @@
-import '@tanstack/react-start/server-only';
 
 function getDsn(){
   return process.env["SENTRY_DSN"];
