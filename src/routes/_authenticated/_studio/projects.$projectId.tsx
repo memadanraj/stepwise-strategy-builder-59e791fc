@@ -7,7 +7,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { draftScenesWithAi } from "@/lib/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { WritingPanel } from "@/components/studio/WritingPanel";
-import { SceneImage, StylePicker, useSceneImages, useImageCost } from "@/components/studio/SceneImage";
+import { SceneImage, StylePicker, useSceneImages, useImageCost, useSceneClips, useClipCost } from "@/components/studio/SceneImage";
+import { RenderPanel } from "@/components/studio/RenderPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,7 +60,7 @@ const versionsQ = (id: string) => queryOptions({
   },
 });
 
-type Tab = "writing" | "scenes" | "assets" | "versions";
+type Tab = "writing" | "scenes" | "render" | "assets" | "versions";
 
 function ProjectPage() {
   const { projectId } = Route.useParams();
@@ -83,7 +84,7 @@ function ProjectPage() {
       </div>
       {project.idea && <p className="mt-3 max-w-2xl text-muted-foreground">{project.idea}</p>}
       <div className="mt-6 flex gap-1 border-b border-border">
-        {(["writing", "scenes", "assets", "versions"] as Tab[]).map((t) => (
+        {(["writing", "scenes", "render", "assets", "versions"] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`-mb-px border-b-2 px-4 py-2 text-sm capitalize ${tab === t ? "border-signal text-foreground" : "border-transparent text-muted-foreground"}`}>
             {t}
@@ -93,6 +94,7 @@ function ProjectPage() {
       <div className="mt-6">
         {tab === "writing" && <WritingPanel project={project} onScenesChanged={() => setTab("scenes")} />}
         {tab === "scenes" && <><StylePicker project={project} /><Scenes projectId={projectId} vertical={project.format === "short"} /></>}
+        {tab === "render" && <RenderPanel project={project} />}
         {tab === "assets" && <Assets project={project} />}
         {tab === "versions" && <Versions project={project} />}
       </div>
@@ -104,7 +106,9 @@ function Scenes({ projectId, vertical }: { projectId: string; vertical: boolean 
   const qc = useQueryClient();
   const { data: scenes = [] } = useQuery(scenesQ(projectId));
   const { data: images = {} } = useSceneImages(projectId);
+  const { data: clips = {} } = useSceneClips(projectId);
   const { data: imageCost } = useImageCost();
+  const { data: clipCost } = useClipCost();
   const refresh = () => qc.invalidateQueries({ queryKey: ["scenes", projectId] });
   const total = scenes.reduce((s, x) => s + Number(x.duration_seconds), 0);
   const draftFn = useServerFn(draftScenesWithAi);
@@ -172,7 +176,7 @@ function Scenes({ projectId, vertical }: { projectId: string; vertical: boolean 
           {scenes.map((s, i) => (
             <SceneRow key={s.id} scene={s} index={i} last={i === scenes.length - 1}
               onMove={(d) => move(i, d)} onDelete={() => remove(s.id)} onSaved={refresh}
-              image={<SceneImage scene={s} url={images[s.id]} cost={imageCost} vertical={vertical} />} />
+              image={<SceneImage scene={s} url={images[s.id]} clipUrl={clips[s.id]} cost={imageCost} clipCost={clipCost} vertical={vertical} />} />
           ))}
         </div>
       )}
