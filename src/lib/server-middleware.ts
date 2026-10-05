@@ -6,12 +6,12 @@ import { createMiddleware } from "@tanstack/react-start";
 
 export const rateLimitServerFunctions = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
-    const mod = await import("./rate-limit.server");
+    const mod = await import("./rate-limit.impl");
     return mod.rateLimit(next);
   },
 );
 
 export async function reportServerError(error: unknown, context: Record<string, unknown> = {}) {
-  const mod = await import("./observability.server");
+  const mod = await import("./observability.impl");
   return mod.reportServerError(error, context);
 }
