@@ -52,6 +52,7 @@ export const createSubscriptionCheckout=createServerFn({method:"POST"})
     const origin=new URL(req.url).origin;
     const session=await stripe("checkout/sessions","POST",encodeForm({
       mode:"subscription",
+      "managed_payments[enabled]":"false",
       customer:customer.stripe_customer_id,
       "line_items[0][price]":plan.stripe_price_id,
       "line_items[0][quantity]":"1",
@@ -101,7 +102,7 @@ export const createCreditPackCheckout=createServerFn({method:"POST"})
     const customer=await customerFor(context.userId,context.claims?.email || "");
     const req=getRequest(), origin=new URL(req.url).origin;
     const session=await stripe("checkout/sessions","POST",encodeForm({
-      mode:"payment", customer:customer.stripe_customer_id,
+      mode:"payment", "managed_payments[enabled]":"false", customer:customer.stripe_customer_id,
       "line_items[0][price]":pack.stripe_price_id, "line_items[0][quantity]":"1",
       success_url:`${origin}/settings?billing=success`,
       cancel_url:`${origin}/settings?billing=cancelled`,
