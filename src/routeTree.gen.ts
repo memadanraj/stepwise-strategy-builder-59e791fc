@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DevProvisionRouteImport } from './routes/dev-provision'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedStudioRouteRouteImport } from './routes/_authenticated/_studio/route'
 import { Route as YoutubeCallbackRouteImport } from './routes/youtube.callback'
@@ -34,6 +35,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevProvisionRoute = DevProvisionRouteImport.update({
+  id: '/dev-provision',
+  path: '/dev-provision',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -90,6 +96,7 @@ const AuthenticatedStudioProjectsProjectIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dev-provision': typeof DevProvisionRoute
   '/reset-password': typeof ResetPasswordRoute
   '/youtube/callback': typeof YoutubeCallbackRoute
   '/admin': typeof AuthenticatedStudioAdminRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dev-provision': typeof DevProvisionRoute
   '/reset-password': typeof ResetPasswordRoute
   '/youtube/callback': typeof YoutubeCallbackRoute
   '/admin': typeof AuthenticatedStudioAdminRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/dev-provision': typeof DevProvisionRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/_studio': typeof AuthenticatedStudioRouteRouteWithChildren
   '/youtube/callback': typeof YoutubeCallbackRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/dev-provision'
     | '/reset-password'
     | '/youtube/callback'
     | '/admin'
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/dev-provision'
     | '/reset-password'
     | '/youtube/callback'
     | '/admin'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/dev-provision'
     | '/reset-password'
     | '/_authenticated/_studio'
     | '/youtube/callback'
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  DevProvisionRoute: typeof DevProvisionRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   YoutubeCallbackRoute: typeof YoutubeCallbackRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
@@ -197,6 +210,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev-provision': {
+      id: '/dev-provision'
+      path: '/dev-provision'
+      fullPath: '/dev-provision'
+      preLoaderRoute: typeof DevProvisionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -304,6 +324,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  DevProvisionRoute: DevProvisionRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   YoutubeCallbackRoute: YoutubeCallbackRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
