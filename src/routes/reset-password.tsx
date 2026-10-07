@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileWidget } from "@/components/common/TurnstileWidget";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -23,12 +24,12 @@ export const Route = createFileRoute("/reset-password")({
 function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false);\n  const [captchaToken, setCaptchaToken] = useState<string | null>(null);\n  const handleCaptcha = useCallback((token: string | null) => setCaptchaToken(token), []);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.updateUser({ password });
+    const { error } = await supabase.auth.updateUser({ password } as any);
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Password updated");
@@ -42,7 +43,7 @@ function ResetPassword() {
         <h1 className="text-2xl font-bold">Set a new password</h1>
         <div className="space-y-1.5">
           <Label htmlFor="pw">New password</Label>
-          <Input id="pw" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input id="pw" type="password" required minLength={8} maxLength={72} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         <Button variant="signal" className="w-full" disabled={busy}>{busy ? "Saving…" : "Update password"}</Button>
       </form>
