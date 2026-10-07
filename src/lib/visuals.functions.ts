@@ -2,14 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1";
+const OPENAI_API = "https://api.openai.com/v1";
+const VIDEO_API = (process.env.VIDEO_GENERATION_API_URL || "").replace(/\/$/, "");
 
-function gatewayHeaders(apiKey: string, json = true) {
+function providerHeaders(apiKey: string, json = true) {
   return {
     ...(json ? { "Content-Type": "application/json" } : {}),
     Authorization: `Bearer ${apiKey}`,
-    "Lovable-API-Key": apiKey,
-    "X-Lovable-AIG-SDK": "tanstack-ai",
   };
 }
 
@@ -52,8 +51,9 @@ async function fetchMediaBytes(url: string, apiKey: string): Promise<Buffer | nu
 }
 
 async function fetchVideoContent(jobId: string, apiKey: string): Promise<Buffer> {
-  const res = await fetch(`${GATEWAY}/videos/${encodeURIComponent(jobId)}/content`, {
-    headers: gatewayHeaders(apiKey, false),
+  if (!VIDEO_API) throw new Error("Video generation provider is not configured.");
+  const res = await fetch(`${VIDEO_API}/videos/${encodeURIComponent(jobId)}/content`, {
+    headers: providerHeaders(apiKey, false),
   });
   if (!res.ok) {
     throw new Error(await gatewayError(res, "The generated clip could not be downloaded"));
@@ -101,9 +101,9 @@ function composePrompt(project: any, characters: any[], visualPrompt: string) {
 }
 
 async function generateImage(apiKey: string, model: string, prompt: string, vertical: boolean): Promise<Buffer> {
-  const res = await fetch(`${GATEWAY}/images/generations`, {
+  const res = await fetch(`${OPENAI_API}/images/generations`, {
     method: "POST",
-    headers: gatewayHeaders(apiKey),
+    headers: providerHeaders(apiKey),
     body: JSON.stringify({
       model,
       prompt,
@@ -122,7 +122,7 @@ async function generateImage(apiKey: string, model: string, prompt: string, vert
   if (item?.b64_json) return Buffer.from(item.b64_json, "base64");
 
   if (item?.url) {
-    const bytes = await fetchMediaBytes(item.url, apiKey);
+    const bytes = await fetchMediaBytes(item.url);
     if (bytes) return bytes;
   }
 
@@ -136,9 +136,11 @@ async function generateClip(
   durationSeconds: number,
   vertical: boolean,
 ): Promise<Buffer> {
-  const start = await fetch(`${GATEWAY}/videos`, {
+  if (!VIDEO_API) throw new Error("Video generation provider is not configured. Set VIDEO_GENERATION_API_URL.");
+  if (!process.env.VIDEO_GENERATION_API_KEY) throw new Error("Video generation provider key is not configured.");
+  const start = await fetch(`${VIDEO_API}/videos`, {
     method: "POST",
-    headers: gatewayHeaders(apiKey),
+    headers: providerHeaders(apiKey),
     body: JSON.stringify({
       model,
       prompt,
@@ -161,8 +163,8 @@ async function generateClip(
   for (;;) {
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    const poll = await fetch(`${GATEWAY}/videos/${encodeURIComponent(id)}`, {
-      headers: gatewayHeaders(apiKey, false),
+    const poll = await fetch(`${VIDEO_API}/videos/${encodeURIComponent(id)}`, {
+      headers: providerHeaders(apiKey, false),
     });
     const info = await poll.json().catch(() => ({}));
 
@@ -178,7 +180,7 @@ async function generateClip(
         info.output?.url;
 
       if (url) {
-        const bytes = await fetchMediaBytes(url, apiKey);
+        const bytes = await fetchMediaBytes(url);
         if (bytes) return bytes;
       }
 
@@ -247,7 +249,7 @@ async function runVisualJob(opts: {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   try {
-    const apiKey = process.env["LOVABLE_API_KEY"];
+    const apiKey = opts.taskSlug === "generate_image" ? process.env.OPENAI_API_KEY : process.env.VIDEO_GENERATION_API_KEY;
     if (!apiKey) throw new Error("AI is not configured");
 
     const out = await opts.work({
@@ -256,10 +258,10 @@ async function runVisualJob(opts: {
       scene,
       apiKey,
       model:
-        task?.model ??
+        task?.model?.replace(/^openai\//, "") ??
         (opts.taskSlug === "generate_image"
-          ? "openai/gpt-image-2"
-          : "google/veo-3.1-lite"),
+          ? process.env.OPENAI_IMAGE_MODEL || "gpt-image-2"
+          : process.env.VIDEO_GENERATION_MODEL || ""),
     });
 
     const path = `${ctx.project.user_id}/${opts.projectId}/${crypto.randomUUID()}.${out.ext}`;
