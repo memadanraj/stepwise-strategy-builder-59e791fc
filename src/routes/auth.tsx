@@ -44,6 +44,22 @@ function AuthPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    // Honeypot: bots fill hidden fields; silently ignore.
+    if ((form.elements.namedItem("website") as HTMLInputElement | null)?.value) return;
+    const cleanEmail = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail) || cleanEmail.length > 255) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (mode !== "forgot" && (password.length < 8 || password.length > 72)) {
+      toast.error("Password must be 8–72 characters.");
+      return;
+    }
+    if (mode === "signup" && name.trim().length > 100) {
+      toast.error("Name must be under 100 characters.");
+      return;
+    }
     setBusy(true);
     setNotice(null);
     try {
