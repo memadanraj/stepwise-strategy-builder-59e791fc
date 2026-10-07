@@ -58,13 +58,19 @@ async function planSlugFromPrice(db: any, priceId: string | undefined) {
   const row = (await db.from("plans").select("slug").eq("paddle_price_id", priceId).maybeSingle()).data;
   return row?.slug || null;
 }
+async function userIdFromCustomer(db: any, customerId: string | undefined) {
+  if (!customerId) return null;
+  const row = (await db.from("paddle_customers").select("user_id").eq("paddle_customer_id", customerId).maybeSingle()).data;
+  return row?.user_id || null;
+}
 async function upsertSubscription(db: any, subscription: any) {
   const existing = (await db.from("paddle_subscriptions").select("user_id,plan_slug").eq("paddle_subscription_id", subscription.id).maybeSingle()).data;
   const customData = subscription.custom_data || {};
-  const userId = customData.user_id || existing?.user_id;
+  const mappedUserId = await userIdFromCustomer(db, subscription.customer_id ? String(subscription.customer_id) : undefined);
+  const userId = mappedUserId || existing?.user_id || customData.user_id;
   if (!userId) return;
   const firstRecurringItem = Array.isArray(subscription.items) ? subscription.items.find((item: any) => item?.recurring && item?.price?.id) : undefined;
-  const planSlug = customData.plan_slug || existing?.plan_slug || (await planSlugFromPrice(db, firstRecurringItem?.price?.id));
+  const planSlug = (await planSlugFromPrice(db, firstRecurringItem?.price?.id)) || existing?.plan_slug;
   if (!planSlug) return;
   await db.from("paddle_subscriptions").upsert({
     user_id: userId, paddle_customer_id: String(subscription.customer_id || ""), paddle_subscription_id: subscription.id,
@@ -93,22 +99,44 @@ export async function handlePaddleWebhook(request: Request) {
   if (seen.error) return new Response("Could not record event", { status: 500 });
   try {
     if (eventType === "transaction.completed") {
-      const transaction = event.data, customData = transaction.custom_data || {}, userId = customData.user_id, type = customData.type;
-      if (userId && transaction.customer_id) await db.from("paddle_customers").upsert({ user_id: userId, paddle_customer_id: String(transaction.customer_id), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-      if (userId && type === "credit_pack" && ["api", "web"].includes(transaction.origin)) {
-        await addCredits(db, userId, Number(customData.credits || 0), "purchase", `Paddle credit pack: ${customData.pack_slug || "unknown"}`);
+      const transaction = event.data;
+      const customData = transaction.custom_data || {};
+      const customerId = transaction.customer_id ? String(transaction.customer_id) : undefined;
+      const mappedUserId = await userIdFromCustomer(db, customerId);
+      const userId = mappedUserId || customData.user_id;
+      const paidPriceId = Array.isArray(transaction.items)
+        ? transaction.items.find((item: any) => item?.price?.id)?.price?.id
+        : undefined;
+
+      if (userId && customerId && !mappedUserId) {
+        await db.from("paddle_customers").upsert({
+          user_id: userId,
+          paddle_customer_id: customerId,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
       }
-      if (userId && type === "subscription" && transaction.subscription_id) {
+
+      if (userId && ["api", "web"].includes(transaction.origin)) {
+        const pack = paidPriceId
+          ? (await db.from("credit_packs").select("slug,credits").eq("paddle_price_id", paidPriceId).maybeSingle()).data
+          : null;
+        if (pack?.credits) {
+          await addCredits(db, userId, Number(pack.credits), "purchase", `Paddle credit pack: ${pack.slug || "unknown"}`);
+        }
+      }
+
+      if (userId && transaction.subscription_id) {
         const subscription = await paddleApi(`subscriptions/${transaction.subscription_id}`);
         await upsertSubscription(db, subscription);
-        const planSlug = customData.plan_slug || subscription.custom_data?.plan_slug;
+        const planSlug = await planSlugFromPrice(db, paidPriceId);
         if (planSlug && ["api", "web"].includes(transaction.origin)) {
           const plan = (await db.from("plans").select("monthly_credits").eq("slug", planSlug).maybeSingle()).data;
           if (plan?.monthly_credits) await addCredits(db, userId, Number(plan.monthly_credits), "subscription", `Initial ${planSlug} credits`);
         }
       }
-      if (userId && type === "subscription" && transaction.subscription_id && transaction.origin === "subscription_recurring") {
-        const planSlug = customData.plan_slug;
+
+      if (userId && transaction.subscription_id && transaction.origin === "subscription_recurring") {
+        const planSlug = await planSlugFromPrice(db, paidPriceId);
         if (planSlug) {
           const plan = (await db.from("plans").select("monthly_credits").eq("slug", planSlug).maybeSingle()).data;
           if (plan?.monthly_credits) await addCredits(db, userId, Number(plan.monthly_credits), "subscription", `Monthly ${planSlug} credits`);
