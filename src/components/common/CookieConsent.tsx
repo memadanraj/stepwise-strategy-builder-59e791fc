@@ -19,8 +19,9 @@ export function CookieConsent() {
     setOpen(false);
   };
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="cookie-consent-title" className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-xl rounded-2xl border border-border bg-surface p-5 shadow-lg" className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-xl rounded-2xl border border-border bg-surface p-5 shadow-lg">
-      <h2 id="cookie-consent-title" className="text-sm font-semibold text-foreground">Cookie preferences</h2>\n      <p className="mt-2 text-sm text-foreground">
+    <div role="dialog" aria-modal="true" aria-labelledby="cookie-consent-title" className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-xl rounded-2xl border border-border bg-surface p-5 shadow-lg">
+      <h2 id="cookie-consent-title" className="text-sm font-semibold text-foreground">Cookie preferences</h2>
+      <p className="mt-2 text-sm text-foreground">
         We use essential cookies to keep you signed in, and optional analytics measurement to improve Reelforge.{" "}
         <Link to="/privacy" className="underline">Learn more</Link>
       </p>
