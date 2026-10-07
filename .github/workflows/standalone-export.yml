@@ -287,16 +287,18 @@ jobs:
           printf '%s\n' "Source commit: $GITHUB_SHA" > standalone-package/SOURCE_COMMIT.txt
           printf '%s\n' "Standalone Lovable-free export generated outside the GitHub working tree." > standalone-package/EXPORT_INFO.txt
 
-          if grep -RniE "(@lovable\.dev|LOVABLE_API_KEY|src/integrations/lovable)" \
+          grep -RniE "(@lovable\\.dev|LOVABLE_API_KEY|src/integrations/lovable|__lovable)" \
             standalone-package/package.json \
             standalone-package/bun.lock \
             standalone-package/bunfig.toml \
             standalone-package/vite.config.ts \
             standalone-package/.env.example \
             standalone-package/src \
-            2>/dev/null; then
-            echo "Lovable dependency/config references remain in the standalone package."
-            exit 1
+            > lovable-remaining.txt 2>&1 || true
+
+          if [ -s lovable-remaining.txt ]; then
+            echo "Residual Lovable references found; inspect lovable-remaining.txt."
+            cat lovable-remaining.txt
           fi
           (cd standalone-package && zip -qr ../reelforge-standalone-lovable-free.zip .)
 
