@@ -59,14 +59,14 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="bg-surface">
         <DialogHeader><DialogTitle className="font-display text-2xl">New project</DialogTitle></DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} className="space-y-4">\n          <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
           <div className="space-y-1.5">
             <Label htmlFor="title">Working title</Label>
-            <Input id="title" placeholder="Why octopuses might be aliens" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <Input id="title" required minLength={2} maxLength={120} placeholder="Why octopuses might be aliens" value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="idea">What's the video about?</Label>
-            <Textarea id="idea" rows={3} placeholder="Describe the idea, audience and tone…" value={idea} onChange={(e) => setIdea(e.target.value)} />
+            <Textarea id="idea" rows={3} maxLength={2000} placeholder="Describe the idea, audience and tone…" value={idea} onChange={(e) => setIdea(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Choice value="long" current={format} onPick={setFormat} title="Long-form" desc="5–20 min, 16:9" />
