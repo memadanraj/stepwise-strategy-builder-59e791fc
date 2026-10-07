@@ -27,7 +27,7 @@ export async function runAiTask<T, R>(opts: {
     return { ok: false, error: je?.message?.includes("INSUFFICIENT_CREDITS") ? "Not enough credits." : "Couldn't start the AI job." };
   }
   try {
-    const apiKey = process.env["LOVABLE_API_KEY"];
+    const apiKey = process.env["OPENAI_API_KEY"];
     if (!apiKey) throw new Error("AI is not configured");
     const result = await generateStructured<T>({
       apiKey,
