@@ -1,32 +1,25 @@
 import { useEffect, useRef } from "react";
 
 type TurnstileInstance = {
-  render: (
-    element: HTMLElement,
-    options: {
-      sitekey: string;
-      callback?: (token: string) => void;
-      "expired-callback"?: () => void;
-      "error-callback"?: () => void;
-    },
-  ) => string;
+  render: (element: HTMLElement, options: {
+    sitekey: string;
+    callback?: (token: string) => void;
+    "expired-callback"?: () => void;
+    "error-callback"?: () => void;
+  }) => string;
+  reset: (widgetId: string) => void;
 };
 
 declare global {
-  interface Window {
-    turnstile?: TurnstileInstance;
-  }
+  interface Window { turnstile?: TurnstileInstance; }
 }
 
 let scriptPromise: Promise<void> | undefined;
 
 function loadTurnstile() {
   if (scriptPromise) return scriptPromise;
-  scriptPromise = new Promise((resolve, reject) => {
-    if (window.turnstile) {
-      resolve();
-      return;
-    }
+  scriptPromise = new Promise<void>((resolve, reject) => {
+    if (window.turnstile) return resolve();
     const existing = document.querySelector<HTMLScriptElement>('script[data-turnstile="true"]');
     if (existing) {
       existing.addEventListener("load", () => resolve(), { once: true });
@@ -47,6 +40,7 @@ function loadTurnstile() {
 
 export function TurnstileWidget({ onToken }: { onToken: (token: string | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const widgetId = useRef<string | null>(null);
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
 
   useEffect(() => {
@@ -55,9 +49,9 @@ export function TurnstileWidget({ onToken }: { onToken: (token: string | null) =
     loadTurnstile()
       .then(() => {
         if (cancelled || !ref.current || !window.turnstile) return;
-        window.turnstile.render(ref.current, {
+        widgetId.current = window.turnstile.render(ref.current, {
           sitekey: siteKey,
-          callback: onToken,
+          callback: (token) => onToken(token),
           "expired-callback": () => onToken(null),
           "error-callback": () => onToken(null),
         });
@@ -65,6 +59,7 @@ export function TurnstileWidget({ onToken }: { onToken: (token: string | null) =
       .catch(() => onToken(null));
     return () => {
       cancelled = true;
+      widgetId.current = null;
       if (ref.current) ref.current.innerHTML = "";
     };
   }, [onToken, siteKey]);
