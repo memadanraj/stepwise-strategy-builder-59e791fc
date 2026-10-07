@@ -24,10 +24,13 @@ export const Route = createFileRoute("/reset-password")({
 function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);\n  const [captchaToken, setCaptchaToken] = useState<string | null>(null);\n  const handleCaptcha = useCallback((token: string | null) => setCaptchaToken(token), []);
+  const [busy, setBusy] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);\n  const handleCaptcha = useCallback((token: string | null) => setCaptchaToken(token), []);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (password.length < 8 || password.length > 72) { toast.error("Password must be 8–72 characters."); return; }
+    if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !captchaToken) { toast.error("Please complete the bot check."); return; }
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password } as any);
     setBusy(false);
