@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { StudioPreview } from "@/components/landing/StudioPreview";
 import { plansQuery } from "@/lib/plans";
+import { SiteFooter } from "@/components/legal/LegalLayout";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -194,12 +195,7 @@ function Index() {
         </div>
       </section>
 
-      <footer className="border-t border-border py-10">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 text-sm text-muted-foreground">
-          <span className="font-display font-bold text-foreground">Reelforge</span>
-          <span>© {new Date().getFullYear()} Reelforge. All rights reserved.</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
