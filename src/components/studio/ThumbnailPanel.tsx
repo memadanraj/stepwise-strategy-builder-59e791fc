@@ -82,9 +82,26 @@ export function ThumbnailPanel({ project }: { project: Tables<"projects"> }) {
     qc.invalidateQueries({ queryKey: key });
   }
 
+  const hasThumbs = thumbs.length > 0;
+
   return (
     <div className="space-y-6">
-      <div className="space-y-4 rounded-lg border border-border bg-card p-5">
+      <section className="rounded-2xl border border-signal/20 bg-signal/5 p-5 sm:p-6">
+        <div className="flex items-start gap-4">
+          <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-signal/10 text-signal">
+            <Frame className="size-5" />
+          </div>
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-signal">Thumbnail workflow</p>
+            <h2 className="mt-1 text-xl font-bold">Make the click-worthy frame</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Keep the headline short, describe the strongest visual moment, then generate a few options and compare them below.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
         <div>
           <label className="text-sm font-medium">Headline text <span className="text-muted-foreground">(optional, keep it short)</span></label>
           <Input className="mt-1" maxLength={40} value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="e.g. THE $1 WINE TRICK" />
@@ -103,11 +120,23 @@ export function ThumbnailPanel({ project }: { project: Tables<"projects"> }) {
           {busy ? "Creating thumbnail…" : `Generate thumbnail${cost != null ? ` · ${cost} credits` : ""}`}
         </Button>
       </div>
-      {thumbs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No thumbnails yet. Generate a few and pick your favourite.</p>
+      {hasThumbs ? (
+        <section>
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Your options</p>
+              <h3 className="mt-1 font-semibold">{thumbs.length} generated {thumbs.length === 1 ? "thumbnail" : "thumbnails"}</h3>
+            </div>
+            <p className="text-xs text-muted-foreground">Pick the strongest first impression.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {thumbs.map((t) => <Thumb key={t.id} asset={t} onDelete={() => remove(t)} />)}
+          </div>
+        </section>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {thumbs.map((t) => <Thumb key={t.id} asset={t} onDelete={() => remove(t)} />)}
+        <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center">
+          <p className="text-sm font-medium">No thumbnails yet</p>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">Generate 2–3 concepts with different headlines or styles before choosing your final one.</p>
         </div>
       )}
     </div>
