@@ -13,7 +13,7 @@ Do not edit an already-applied migration in place. The Paddle migration is inten
 
 ## 2. AI visuals and clips
 
-Set `LOVABLE_API_KEY` and the provider keys required by the existing AI, audio, rendering, and YouTube features.
+Set `OPENAI_API_KEY`, `OPENAI_TEXT_MODEL`, and `OPENAI_IMAGE_MODEL` for AI text/images, plus the provider keys required by audio, rendering, and YouTube. Video generation is provider-neutral through `VIDEO_GENERATION_API_URL`, `VIDEO_GENERATION_API_KEY`, and `VIDEO_GENERATION_MODEL`.
 
 ## 3. Paddle Billing
 
