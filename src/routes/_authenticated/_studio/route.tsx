@@ -76,7 +76,7 @@ function StudioLayout() {
         <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-6 backdrop-blur">
           <div className="flex gap-1 md:hidden">
             {navItems.map((n) => (
-              <Link key={n.to} to={n.to} className="rounded-md p-2 text-muted-foreground" activeProps={{ className: "bg-surface-raised text-foreground" }}>
+              <Link key={n.to} to={n.to} aria-label={n.label} title={n.label} className="rounded-md p-2 text-muted-foreground" activeProps={{ className: "bg-surface-raised text-foreground" }}>
                 <n.icon className="size-4" />
               </Link>
             ))}
