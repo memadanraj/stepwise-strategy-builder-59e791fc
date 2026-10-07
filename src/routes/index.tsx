@@ -19,6 +19,9 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Research. Write. Generate. Edit. Render. Publish. All in one creative studio." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:image", content: "https://reelforge.app/og-image.jpg" },
+      { name: "twitter:image", content: "https://reelforge.app/og-image.jpg" },
+      { property: "og:image:alt", content: "Reelforge AI YouTube studio" },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(plansQuery),
@@ -82,9 +85,8 @@ function Index() {
           <p className="animate-rise mx-auto mt-6 max-w-xl text-lg text-muted-foreground [animation-delay:160ms]">
             Research. Write. Generate. Edit. Render. Publish. All in one creative studio.
           </p>
-          <div className="animate-rise mt-9 flex flex-wrap justify-center gap-3 [animation-delay:240ms]">
+          <div className="animate-rise mt-9 flex justify-center [animation-delay:240ms]">
             <Button variant="signal" size="xl" asChild><Link to="/auth">Start Creating</Link></Button>
-            <Button variant="panel" size="xl" asChild><a href="#workflow">See How It Works</a></Button>
           </div>
           <div className="animate-rise mt-16 [animation-delay:320ms]">
             <StudioPreview />
