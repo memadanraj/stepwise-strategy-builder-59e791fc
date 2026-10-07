@@ -14,3 +14,7 @@ npm run dev
 ## Billing
 
 Billing is integrated with Paddle Billing. See `INTEGRATION_SETUP.md` for Paddle sandbox/live credentials, product/price IDs, and webhook setup.
+
+## Self-hosting
+
+This standalone build does not depend on Lovable. See `SELF_HOSTING.md` for Supabase, OpenAI, Paddle, video-provider, and deployment setup.
