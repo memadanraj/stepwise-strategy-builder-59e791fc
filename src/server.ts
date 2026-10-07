@@ -69,6 +69,8 @@ function secureResponse(response: Response, request: Request): Response {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const redirect = forceHttpsRedirect(request);
+    if (redirect) return redirect;
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
