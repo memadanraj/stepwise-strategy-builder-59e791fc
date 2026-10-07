@@ -145,6 +145,7 @@ function RootComponent() {
       <Outlet />
       <Toaster />
       <CookieConsent />
+      <CloudflareAnalytics />
     </QueryClientProvider>
   );
 }
