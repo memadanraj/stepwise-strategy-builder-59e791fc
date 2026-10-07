@@ -168,35 +168,40 @@ jobs:
 
           - Node.js 20+ or Bun
           - A Supabase project for auth, database, and storage
+          - OpenAI API access for text and image generation
+          - A video-generation provider matching the documented /videos API contract if you want AI motion clips
           - Paddle for billing
-          - API credentials for the AI, audio, rendering, and YouTube features you enable
+          - ElevenLabs and/or other providers for audio
+          - Shotstack or your configured renderer for final exports
+          - Google/YouTube OAuth credentials if publishing to YouTube
 
           ## Local development
 
           1. Copy .env.example to .env.
           2. Fill the required server-only and VITE_* variables.
           3. Apply the SQL migrations in drizzle/migrations to your Supabase database in order.
-          4. Install dependencies with bun install or npm install.
-          5. Start the app with bun run dev or npm run dev.
+          4. Install dependencies with bun install.
+          5. Start the app with bun run dev.
+          6. Open http://localhost:3000.
 
-          ## Production with Node.js
+          ## AI configuration
 
-          Build:
+          Text generation:
 
-              bun install
-              bun run build
+              OPENAI_API_KEY=
+              OPENAI_TEXT_MODEL=gpt-6-sol
 
-          Start:
+          Image generation:
 
-              bun run start
+              OPENAI_IMAGE_MODEL=gpt-image-2
 
-          The Nitro Node output is .output/server/index.mjs.
+          Video generation:
 
-          ## Reverse proxy and HTTPS
+              VIDEO_GENERATION_API_URL=
+              VIDEO_GENERATION_API_KEY=
+              VIDEO_GENERATION_MODEL=
 
-          Put the Node process behind Nginx, Caddy, Traefik, or your platform load balancer. Set NODE_ENV=production.
-
-          The application already enforces HTTPS redirects in production and emits security headers.
+          The standalone code does not call a Lovable AI gateway.
 
           ## Supabase
 
@@ -218,19 +223,42 @@ jobs:
               PADDLE_WEBHOOK_SECRET=
               VITE_PADDLE_CLIENT_TOKEN=
 
-          Configure your Paddle webhook destination as:
+          Configure the webhook destination:
 
               https://YOUR-DOMAIN/api/paddle/webhook
 
-          Store the real Paddle price IDs in plans.paddle_price_id and credit_packs.paddle_price_id.
+          Store real Paddle price IDs in plans.paddle_price_id and credit_packs.paddle_price_id.
 
-          ## Security
+          ## Production
 
-          Never put server secrets in VITE_* variables. In particular, never expose PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY, or provider secret keys to the browser.
+          Build:
+
+              bun install
+              bun run build
+
+          Start:
+
+              NODE_ENV=production bun run start
+
+          The server entry is .output/server/index.mjs.
 
           ## Docker
 
-          A generic Node/Nitro Dockerfile is included for platforms that build from source.
+          Build:
+
+              docker build -t reelforge .
+
+          Run:
+
+              docker run --env-file .env -p 3000:3000 reelforge
+
+          Put the container behind your HTTPS reverse proxy or managed load balancer.
+
+          ## Security
+
+          Never put server secrets in VITE_* variables. In particular, never expose
+          PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY,
+          OPENAI_API_KEY, or other provider secret keys to the browser.
           EOF
 
           cat > Dockerfile <<'EOF'
