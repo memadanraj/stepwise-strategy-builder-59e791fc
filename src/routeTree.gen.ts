@@ -20,7 +20,7 @@ import { Route as YoutubeCallbackRouteImport } from './routes/youtube.callback'
 import { Route as AuthenticatedStudioAdminRouteImport } from './routes/_authenticated/_studio/admin'
 import { Route as AuthenticatedStudioDashboardRouteImport } from './routes/_authenticated/_studio/dashboard'
 import { Route as AuthenticatedStudioSettingsRouteImport } from './routes/_authenticated/_studio/settings'
-import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as ApiPaddleWebhookRouteImport } from './routes/api.paddle.webhook'
 import { Route as AuthenticatedStudioProjectsIndexRouteImport } from './routes/_authenticated/_studio/projects.index'
 import { Route as AuthenticatedStudioProjectsProjectIdRouteImport } from './routes/_authenticated/_studio/projects.$projectId'
 
@@ -81,7 +81,7 @@ const AuthenticatedStudioSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedStudioRouteRoute,
   } as any)
-const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+const ApiPaddleWebhookRoute = ApiPaddleWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
   getParentRoute: () => rootRouteImport,
@@ -109,7 +109,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedStudioAdminRoute
   '/dashboard': typeof AuthenticatedStudioDashboardRoute
   '/settings': typeof AuthenticatedStudioSettingsRoute
-  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/stripe/webhook': typeof ApiPaddleWebhookRoute
   '/projects/$projectId': typeof AuthenticatedStudioProjectsProjectIdRoute
   '/projects/': typeof AuthenticatedStudioProjectsIndexRoute
 }
@@ -123,7 +123,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedStudioAdminRoute
   '/dashboard': typeof AuthenticatedStudioDashboardRoute
   '/settings': typeof AuthenticatedStudioSettingsRoute
-  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/stripe/webhook': typeof ApiPaddleWebhookRoute
   '/projects/$projectId': typeof AuthenticatedStudioProjectsProjectIdRoute
   '/projects': typeof AuthenticatedStudioProjectsIndexRoute
 }
@@ -140,7 +140,7 @@ export interface FileRoutesById {
   '/_authenticated/_studio/admin': typeof AuthenticatedStudioAdminRoute
   '/_authenticated/_studio/dashboard': typeof AuthenticatedStudioDashboardRoute
   '/_authenticated/_studio/settings': typeof AuthenticatedStudioSettingsRoute
-  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/stripe/webhook': typeof ApiPaddleWebhookRoute
   '/_authenticated/_studio/projects/$projectId': typeof AuthenticatedStudioProjectsProjectIdRoute
   '/_authenticated/_studio/projects/': typeof AuthenticatedStudioProjectsIndexRoute
 }
@@ -199,7 +199,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   YoutubeCallbackRoute: typeof YoutubeCallbackRoute
-  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  ApiPaddleWebhookRoute: typeof ApiPaddleWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -285,7 +285,7 @@ declare module '@tanstack/react-router' {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
       fullPath: '/api/stripe/webhook'
-      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      preLoaderRoute: typeof ApiPaddleWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/_studio/projects/': {
@@ -348,7 +348,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   YoutubeCallbackRoute: YoutubeCallbackRoute,
-  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  ApiPaddleWebhookRoute: ApiPaddleWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

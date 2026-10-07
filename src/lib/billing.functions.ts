@@ -1,139 +1,175 @@
 import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-function stripeEnv(name: string) {
+function paddleEnv(name: string) {
   const value = process.env[name];
   if (!value) throw new Error(`Missing ${name} environment variable.`);
   return value;
 }
-function encodeForm(entries: Record<string,string>) {
-  const form = new URLSearchParams();
-  for (const [key,value] of Object.entries(entries)) form.set(key,value);
-  return form;
-}
-async function stripe(path: string, method: "GET"|"POST", form?: URLSearchParams) {
-  const secret = stripeEnv("STRIPE_SECRET_KEY");
-  const r = await fetch(`https://api.stripe.com/v1/${path}`, {
+
+type PaddleMethod = "GET" | "POST" | "PATCH";
+
+async function paddle(path: string, method: PaddleMethod, body?: unknown) {
+  const apiKey = paddleEnv("PADDLE_API_KEY");
+  const environment = process.env.PADDLE_ENVIRONMENT === "sandbox" ? "sandbox" : "live";
+  const baseUrl = environment === "sandbox" ? "https://sandbox-api.paddle.com" : "https://api.paddle.com";
+  const response = await fetch(`${baseUrl}/${path}`, {
     method,
-    headers: { Authorization: `Bearer ${secret}`, ...(form ? {"Content-Type":"application/x-www-form-urlencoded"} : {}) },
-    body: form,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Paddle-Version": "1",
+      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+    },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
-  const data: any = await r.json().catch(()=>({}));
-  if (!r.ok) throw new Error(data?.error?.message || `Stripe request failed (${r.status}).`);
-  return data;
+  const payload: any = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error?.detail || payload?.error?.message || `Paddle request failed (${response.status}).`);
+  }
+  return payload?.data ?? payload;
 }
+
 async function admin() {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
-async function customerFor(userId: string, email: string) {
-  const db:any = await admin();
-  const existing=(await db.from("stripe_customers").select("*").eq("user_id",userId).maybeSingle()).data;
-  if(existing?.stripe_customer_id) return existing;
-  const customer=await stripe("customers","POST",encodeForm({email, "metadata[user_id]":userId}));
-  await db.from("stripe_customers").upsert({
-    user_id:userId, stripe_customer_id:customer.id, email, updated_at:new Date().toISOString()
-  },{onConflict:"user_id"});
-  return {stripe_customer_id:customer.id,email};
+
+async function createCheckoutTransaction({
+  db,
+  userId,
+  priceId,
+  customData,
+}: {
+  db: any;
+  userId: string;
+  priceId: string;
+  customData: Record<string, string>;
+}) {
+  const existingCustomer = (
+    await db.from("paddle_customers").select("paddle_customer_id").eq("user_id", userId).maybeSingle()
+  ).data;
+
+  const transaction = await paddle("transactions", "POST", {
+    ...(existingCustomer?.paddle_customer_id ? { customer_id: existingCustomer.paddle_customer_id } : {}),
+    items: [{ price_id: priceId, quantity: 1 }],
+    custom_data: customData,
+  });
+
+  if (!transaction?.id) throw new Error("Paddle did not return a checkout transaction.");
+  return transaction.id as string;
 }
 
-export const createSubscriptionCheckout=createServerFn({method:"POST"})
+export const createSubscriptionCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d)=>z.object({planSlug:z.string().min(1).max(50)}).parse(d))
-  .handler(async({data,context})=>{
-    const db:any=await admin();
-    const plan=(await db.from("plans").select("slug,name,stripe_price_id,is_active").eq("slug",data.planSlug).maybeSingle()).data;
-    if(!plan?.is_active) throw new Error("Plan not found or inactive.");
-    if(!plan.stripe_price_id) throw new Error("This plan is not connected to a Stripe Price yet.");
-    const userEmail=context.claims?.email || "";
-    const customer=await customerFor(context.userId,userEmail);
-    const req=getRequest();
-    const origin=new URL(req.url).origin;
-    const session=await stripe("checkout/sessions","POST",encodeForm({
-      mode:"subscription",
-      "managed_payments[enabled]":"false",
-      customer:customer.stripe_customer_id,
-      "line_items[0][price]":plan.stripe_price_id,
-      "line_items[0][quantity]":"1",
-      success_url:`${origin}/settings?billing=success`,
-      cancel_url:`${origin}/settings?billing=cancelled`,
-      "metadata[user_id]":context.userId,
-      "metadata[plan_slug]":plan.slug,
-      "metadata[type]":"subscription",
-      "subscription_data[metadata][user_id]":context.userId,
-      "subscription_data[metadata][plan_slug]":plan.slug,
-    }));
-    return {ok:true,url:session.url as string};
+  .inputValidator((d) => z.object({ planSlug: z.string().min(1).max(50) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const db: any = await admin();
+    const plan = (
+      await db.from("plans").select("slug,name,paddle_price_id,is_active").eq("slug", data.planSlug).maybeSingle()
+    ).data;
+    if (!plan?.is_active) throw new Error("Plan not found or inactive.");
+    if (!plan.paddle_price_id) throw new Error("This plan is not connected to a Paddle Price yet.");
+
+    const transactionId = await createCheckoutTransaction({
+      db,
+      userId: context.userId,
+      priceId: plan.paddle_price_id,
+      customData: { user_id: context.userId, plan_slug: plan.slug, type: "subscription" },
+    });
+    return { ok: true, transactionId };
   });
 
-export const changeSubscriptionPlan=createServerFn({method:"POST"})
+export const changeSubscriptionPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d)=>z.object({planSlug:z.string().min(1).max(50)}).parse(d))
-  .handler(async({data,context})=>{
-    const db:any=await admin();
-    const plan=(await db.from("plans").select("slug,stripe_price_id,is_active").eq("slug",data.planSlug).maybeSingle()).data;
-    if(!plan?.is_active) throw new Error("Plan not found or inactive.");
-    if(!plan.stripe_price_id) throw new Error("This plan is not connected to a Stripe Price yet.");
-    const current=(await db.from("stripe_subscriptions").select("stripe_subscription_id,status").eq("user_id",context.userId).in("status",["active","trialing","past_due"]).order("created_at",{ascending:false}).limit(1).maybeSingle()).data;
-    if(!current?.stripe_subscription_id) throw new Error("No active subscription found. Use Checkout to start a subscription.");
-    const sub=await stripe(`subscriptions/${current.stripe_subscription_id}`,"GET");
-    const item=sub.items?.data?.[0];
-    if(!item?.id) throw new Error("Stripe subscription has no billable item.");
-    const updated=await stripe(`subscriptions/${current.stripe_subscription_id}`,"POST",encodeForm({
-      "items[0][id]":item.id,
-      "items[0][price]":plan.stripe_price_id,
-      proration_behavior:"create_prorations",
-      "metadata[user_id]":context.userId,
-      "metadata[plan_slug]":plan.slug,
-    }));
-    await db.from("profiles").update({plan_slug:plan.slug,updated_at:new Date().toISOString()}).eq("id",context.userId);
-    return {ok:true,status:updated.status};
-  });
-
-export const createCreditPackCheckout=createServerFn({method:"POST"})
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d)=>z.object({packSlug:z.string().min(1).max(50)}).parse(d))
-  .handler(async({data,context})=>{
-    const db:any=await admin();
-    const pack=(await db.from("credit_packs").select("*").eq("slug",data.packSlug).maybeSingle()).data;
-    if(!pack?.is_active) throw new Error("Credit pack not found or inactive.");
-    if(!pack.stripe_price_id) throw new Error("This credit pack is not connected to a Stripe Price yet.");
-    const customer=await customerFor(context.userId,context.claims?.email || "");
-    const req=getRequest(), origin=new URL(req.url).origin;
-    const session=await stripe("checkout/sessions","POST",encodeForm({
-      mode:"payment", "managed_payments[enabled]":"false", customer:customer.stripe_customer_id,
-      "line_items[0][price]":pack.stripe_price_id, "line_items[0][quantity]":"1",
-      success_url:`${origin}/settings?billing=success`,
-      cancel_url:`${origin}/settings?billing=cancelled`,
-      "metadata[user_id]":context.userId, "metadata[pack_slug]":pack.slug,
-      "metadata[credits]":String(pack.credits), "metadata[type]":"credit_pack",
-    }));
-    return {ok:true,url:session.url as string};
-  });
-
-export const createBillingPortal=createServerFn({method:"POST"})
-  .middleware([requireSupabaseAuth])
-  .handler(async({context})=>{
-    const db:any=await admin();
-    const customer=(await db.from("stripe_customers").select("stripe_customer_id").eq("user_id",context.userId).maybeSingle()).data;
-    if(!customer?.stripe_customer_id) throw new Error("No Stripe customer exists yet.");
-    const origin=new URL(getRequest().url).origin;
-    const session=await stripe("billing_portal/sessions","POST",encodeForm({
-      customer:customer.stripe_customer_id, return_url:`${origin}/settings`,
-    }));
-    return {ok:true,url:session.url as string};
-  });
-
-export const getBillingStatus=createServerFn({method:"GET"})
-  .middleware([requireSupabaseAuth])
-  .handler(async({context})=>{
-    const db:any=await admin();
-    const [customer,subscription,plans,packs]=await Promise.all([
-      db.from("stripe_customers").select("*").eq("user_id",context.userId).maybeSingle(),
-      db.from("stripe_subscriptions").select("*").eq("user_id",context.userId).order("created_at",{ascending:false}).limit(1).maybeSingle(),
-      db.from("plans").select("slug,name,tagline,price_monthly_cents,monthly_credits,max_projects,max_storage_gb,max_video_minutes,max_resolution,features,is_featured,stripe_price_id").eq("is_active",true).order("sort_order"),
-      db.from("credit_packs").select("*").eq("is_active",true).order("sort_order"),
+  .inputValidator((d) => z.object({ planSlug: z.string().min(1).max(50) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const db: any = await admin();
+    const [planResult, currentResult] = await Promise.all([
+      db.from("plans").select("slug,paddle_price_id,is_active").eq("slug", data.planSlug).maybeSingle(),
+      db.from("paddle_subscriptions").select("paddle_subscription_id,status,plan_slug").eq("user_id", context.userId)
+        .in("status", ["active", "trialing", "past_due"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
-    return {customer:customer.data||null,subscription:subscription.data||null,plans:plans.data||[],packs:packs.data||[]};
+    const plan = planResult.data;
+    const current = currentResult.data;
+    if (!plan?.is_active) throw new Error("Plan not found or inactive.");
+    if (!plan.paddle_price_id) throw new Error("This plan is not connected to a Paddle Price yet.");
+    if (!current?.paddle_subscription_id) throw new Error("No active subscription found. Use Checkout to start a subscription.");
+
+    const currentPlan = (await db.from("plans").select("paddle_price_id").eq("slug", current.plan_slug).maybeSingle()).data;
+    const subscription = await paddle(`subscriptions/${current.paddle_subscription_id}`, "GET");
+    const items = Array.isArray(subscription?.items) ? subscription.items : [];
+    let selectedIndex = currentPlan?.paddle_price_id
+      ? items.findIndex((item: any) => item?.price?.id === currentPlan.paddle_price_id && item?.recurring)
+      : -1;
+    if (selectedIndex < 0) selectedIndex = items.findIndex((item: any) => item?.recurring);
+    if (selectedIndex < 0 || !items[selectedIndex]?.price?.id) throw new Error("Paddle subscription has no billable recurring item.");
+    if (items[selectedIndex].price.id === plan.paddle_price_id) return { ok: true, status: subscription.status };
+
+    const nextItems = items.map((item: any, index: number) => ({
+      price_id: index === selectedIndex ? plan.paddle_price_id : item.price.id,
+      quantity: Number(item.quantity || 1),
+    }));
+    const updated = await paddle(`subscriptions/${current.paddle_subscription_id}`, "PATCH", {
+      items: nextItems,
+      proration_billing_mode: "prorated_immediately",
+      custom_data: { ...(subscription?.custom_data || {}), user_id: context.userId, plan_slug: plan.slug, type: "subscription" },
+    });
+    await db.from("paddle_subscriptions").update({
+      plan_slug: plan.slug, status: updated.status,
+      current_period_start: updated.current_billing_period?.starts_at || null,
+      current_period_end: updated.current_billing_period?.ends_at || null,
+      cancel_at_period_end: updated.scheduled_change?.action === "cancel",
+      canceled_at: updated.canceled_at || null,
+      metadata: updated.custom_data || {},
+      updated_at: new Date().toISOString(),
+    }).eq("paddle_subscription_id", current.paddle_subscription_id);
+    await db.from("profiles").update({ plan_slug: plan.slug, updated_at: new Date().toISOString() }).eq("id", context.userId);
+    return { ok: true, status: updated.status };
+  });
+
+export const createCreditPackCheckout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ packSlug: z.string().min(1).max(50) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const db: any = await admin();
+    const pack = (await db.from("credit_packs").select("*").eq("slug", data.packSlug).maybeSingle()).data;
+    if (!pack?.is_active) throw new Error("Credit pack not found or inactive.");
+    if (!pack.paddle_price_id) throw new Error("This credit pack is not connected to a Paddle Price yet.");
+    const transactionId = await createCheckoutTransaction({
+      db, userId: context.userId, priceId: pack.paddle_price_id,
+      customData: { user_id: context.userId, pack_slug: pack.slug, credits: String(pack.credits), type: "credit_pack" },
+    });
+    return { ok: true, transactionId };
+  });
+
+export const createBillingPortal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const db: any = await admin();
+    const [customerResult, subscriptionResult] = await Promise.all([
+      db.from("paddle_customers").select("paddle_customer_id").eq("user_id", context.userId).maybeSingle(),
+      db.from("paddle_subscriptions").select("paddle_subscription_id").eq("user_id", context.userId)
+        .in("status", ["active", "trialing", "past_due"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    const customer = customerResult.data;
+    if (!customer?.paddle_customer_id) throw new Error("No Paddle customer exists yet.");
+    const body = subscriptionResult.data?.paddle_subscription_id
+      ? { subscription_ids: [subscriptionResult.data.paddle_subscription_id] } : undefined;
+    const session = await paddle(`customers/${customer.paddle_customer_id}/portal-sessions`, "POST", body);
+    const url = session?.urls?.general?.overview;
+    if (!url) throw new Error("Paddle did not return a customer portal URL.");
+    return { ok: true, url: url as string };
+  });
+
+export const getBillingStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const db: any = await admin();
+    const [customer, subscription, plans, packs] = await Promise.all([
+      db.from("paddle_customers").select("*").eq("user_id", context.userId).maybeSingle(),
+      db.from("paddle_subscriptions").select("*").eq("user_id", context.userId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      db.from("plans").select("slug,name,tagline,price_monthly_cents,monthly_credits,max_projects,max_storage_gb,max_video_minutes,max_resolution,features,is_featured,paddle_price_id").eq("is_active", true).order("sort_order"),
+      db.from("credit_packs").select("*").eq("is_active", true).order("sort_order"),
+    ]);
+    return { customer: customer.data || null, subscription: subscription.data || null, plans: plans.data || [], packs: packs.data || [] };
   });
