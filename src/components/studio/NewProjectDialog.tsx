@@ -35,13 +35,19 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    if ((form.elements.namedItem("website") as HTMLInputElement | null)?.value) return;
+    const cleanTitle = title.trim();
+    const cleanIdea = idea.trim();
+    if (cleanTitle.length < 2 || cleanTitle.length > 120) { toast.error("Title must be 2–120 characters."); return; }
+    if (cleanIdea.length > 2000) { toast.error("Idea must be 2,000 characters or fewer."); return; }
     setBusy(true);
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setBusy(false); return; }
     const { data: created, error } = await supabase.from("projects").insert({
       user_id: u.user.id,
-      title: title.trim() || "Untitled project",
-      idea: idea.trim() || null,
+      title: cleanTitle,
+      idea: cleanIdea || null,
       format,
       mode,
     }).select("id").single();
@@ -59,7 +65,8 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="bg-surface">
         <DialogHeader><DialogTitle className="font-display text-2xl">New project</DialogTitle></DialogHeader>
-        <form onSubmit={submit} className="space-y-4">\n          <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+        <form onSubmit={submit} className="space-y-4">
+          <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
           <div className="space-y-1.5">
             <Label htmlFor="title">Working title</Label>
             <Input id="title" required minLength={2} maxLength={120} placeholder="Why octopuses might be aliens" value={title} onChange={(e) => setTitle(e.target.value)} />
