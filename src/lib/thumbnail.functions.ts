@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const GATEWAY = "https://ai.gateway.lovable.dev";
+const GATEWAY = "https://api.openai.com/v1";
 
 const STYLES: Record<string, string> = {
   bold: "high-contrast YouTube thumbnail, saturated colors, dramatic rim lighting, expressive close-up subject",
@@ -40,8 +40,8 @@ export const generateThumbnail = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     try {
-      const apiKey = process.env["LOVABLE_API_KEY"];
-      if (!apiKey) throw new Error("AI is not configured.");
+      const apiKey = process.env["OPENAI_API_KEY"];
+      if (!apiKey) throw new Error("OPENAI_API_KEY is not configured.");
       const text = data.headline
         ? `Large bold headline text reading exactly "${data.headline}", perfectly spelled, highly legible with thick outline, placed so it does not cover the subject.`
         : "No text.";
@@ -49,7 +49,7 @@ export const generateThumbnail = createServerFn({ method: "POST" })
       const res = await fetch(`${GATEWAY}/v1/images/generations`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: task?.model ?? "openai/gpt-image-2.5-sunburst", prompt, size: "1536x1024" }),
+        body: JSON.stringify({ model: process.env.OPENAI_IMAGE_MODEL || task?.model?.replace(/^openai\//, "") || "gpt-image-2", prompt, size: "1536x1024" }),
       });
       if (!res.ok) {
         console.error("thumbnail gateway error", res.status, await res.text().catch(() => ""));
