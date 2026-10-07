@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ImageIcon, Film, Loader2, Plus, Trash2 } from "lucide-react";
+import { ImageIcon, Film, Loader2, Plus, Trash2, Sparkles, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { generateSceneImage, generateSceneClip } from "@/lib/visuals.functions";
@@ -48,34 +48,73 @@ export function VisualsPanel({ project }: { project: Tables<"projects"> }) {
     const { error } = await supabase.from("projects").update({ visual_style: style }).eq("id", project.id);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["project", project.id] });
+    toast.success(`Visual style set to ${style}`);
   }
 
+  const readyVisuals = scenes.filter((s) => s.image_path || s.clip_path).length;
+
   return (
-    <div className="space-y-8">
-      <section>
-        <p className="mb-2 font-mono text-xs text-muted-foreground">VISUAL STYLE</p>
-        <div className="flex flex-wrap gap-2">
-          {STYLES.map(([v, l]) => (
-            <Button key={v} size="sm" variant={project.visual_style === v ? "signal" : "panel"} onClick={() => setStyle(v)}>{l}</Button>
-          ))}
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-signal/20 bg-signal/5 p-5 sm:p-6">
+        <div className="flex items-start gap-4">
+          <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-signal/10 text-signal">
+            <Sparkles className="size-5" />
+          </div>
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-signal">Visual workflow</p>
+            <h2 className="mt-1 text-xl font-bold">Give every scene a visual direction</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Pick one style for the project, define recurring characters when needed, then generate an image or motion clip for each scene.
+            </p>
+          </div>
+          <div className="ml-auto hidden shrink-0 text-right sm:block">
+            <p className="font-display text-xl font-bold">{readyVisuals}/{scenes.length}</p>
+            <p className="text-[11px] text-muted-foreground">scenes with visuals</p>
+          </div>
         </div>
       </section>
+
+      <Panel title="Visual style" description="Applied as the default creative direction across generated scene visuals.">
+        <div className="flex flex-wrap gap-2">
+          {STYLES.map(([value, label]) => {
+            const active = project.visual_style === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setStyle(value)}
+                className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${active ? "border-signal bg-signal text-signal-foreground" : "border-border bg-surface hover:bg-surface-raised"}`}
+                aria-pressed={active}
+              >
+                {active && <Check className="size-3.5" />}
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </Panel>
+
       <Characters projectId={project.id} />
-      <section>
-        <p className="mb-2 font-mono text-xs text-muted-foreground">SCENE VISUALS</p>
+
+      <Panel
+        title="Scene visuals"
+        description={scenes.length ? `${readyVisuals} of ${scenes.length} scenes already have generated media.` : "Create scenes first, then generate visuals here."}
+      >
         {scenes.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">Add scenes first, then generate visuals for each.</div>
+          <Empty>Add scenes in the Scenes step before generating visuals.</Empty>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {scenes.map((s, i) => <SceneVisual key={s.id} scene={s} index={i} project={project} costs={costs} />)}
+            {scenes.map((scene, index) => (
+              <SceneVisual key={scene.id} scene={scene} index={index} project={project} costs={costs} />
+            ))}
           </div>
         )}
-      </section>
+      </Panel>
     </div>
   );
 }
 
-function SceneVisual({ scene, index, project, costs }: { scene: Tables<"scenes">; index: number; project: Tables<"projects">; costs?: Record<string, number> | undefined }) {
+function SceneVisual({ scene, index, project, costs }: { scene: Tables<"scenes">; index: number; project: Tables<"projects">; costs?: Record<string, number> }) {
   const qc = useQueryClient();
   const imgFn = useServerFn(generateSceneImage);
   const clipFn = useServerFn(generateSceneClip);
@@ -102,24 +141,49 @@ function SceneVisual({ scene, index, project, costs }: { scene: Tables<"scenes">
   }
 
   const aspect = project.format === "short" ? "aspect-[9/16] max-h-80 mx-auto" : "aspect-video";
+  const hasPrompt = !!scene.visual_prompt?.trim();
+  const media = clip.data || img.data;
+
   return (
-    <div className="rounded-xl border border-border bg-surface p-3">
-      <div className={`${aspect} overflow-hidden rounded-lg bg-surface-raised`}>
-        {clip.data ? <video src={clip.data} controls className="size-full object-cover" />
-          : img.data ? <img src={img.data} alt={scene.title} className="size-full object-cover" />
-          : <div className="flex size-full items-center justify-center text-xs text-muted-foreground">{busy ? "Generating…" : "No visual yet"}</div>}
+    <article className="overflow-hidden rounded-2xl border border-border bg-surface">
+      <div className={`relative ${aspect} overflow-hidden bg-surface-raised`}>
+        {clip.data ? (
+          <video src={clip.data} controls className="size-full object-cover" />
+        ) : img.data ? (
+          <img src={img.data} alt={scene.title} className="size-full object-cover" />
+        ) : (
+          <div className="flex size-full flex-col items-center justify-center px-6 text-center">
+            {busy ? <Loader2 className="size-6 animate-spin text-signal" /> : <ImageIcon className="size-6 text-muted-foreground" />}
+            <p className="mt-2 text-sm font-medium">{busy ? "Creating visual…" : "No visual yet"}</p>
+            {!busy && <p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">{hasPrompt ? "Generate an image first, or create a motion clip." : "Add a visual description in Scenes first."}</p>}
+          </div>
+        )}
+        <span className="absolute left-3 top-3 rounded-full bg-background/85 px-2 py-1 font-mono text-[10px] text-signal">
+          SCENE {String(index + 1).padStart(2, "0")}
+        </span>
+        {clip.data && <span className="absolute right-3 top-3 rounded-full bg-background/85 px-2 py-1 text-[10px] font-medium">Motion clip</span>}
       </div>
-      <p className="mt-2 text-sm font-semibold"><span className="font-mono text-xs text-signal">{String(index + 1).padStart(2, "0")}</span> {scene.title}</p>
-      <p className="line-clamp-2 text-xs text-muted-foreground">{scene.visual_prompt || "No visual description — add one in Scenes."}</p>
-      <div className="mt-3 flex gap-2">
-        <Button size="sm" variant="panel" disabled={!!busy || !scene.visual_prompt} onClick={() => run("image")}>
-          {busy === "image" ? <Loader2 className="animate-spin" /> : <ImageIcon />} Image · {costs?.["generate_image"] ?? "…"} cr
-        </Button>
-        <Button size="sm" variant="panel" disabled={!!busy || !scene.visual_prompt} onClick={() => run("clip")}>
-          {busy === "clip" ? <Loader2 className="animate-spin" /> : <Film />} Clip · {costs?.["generate_clip"] ?? "…"} cr
-        </Button>
+
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-semibold">{scene.title}</h3>
+          {media && <span className="shrink-0 rounded-full bg-signal/10 px-2 py-1 text-[10px] font-medium text-signal">Ready</span>}
+        </div>
+        <p className="mt-1 line-clamp-3 text-xs leading-5 text-muted-foreground">
+          {scene.visual_prompt || "No visual description — add one in Scenes."}
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Button size="sm" variant="panel" disabled={!!busy || !hasPrompt} onClick={() => run("image")}>
+            {busy === "image" ? <Loader2 className="animate-spin" /> : <ImageIcon />}
+            {img.data ? "Regenerate" : "Generate"} {costs?.["generate_image"] != null ? `· ${costs["generate_image"]} cr` : ""}
+          </Button>
+          <Button size="sm" variant="panel" disabled={!!busy || !hasPrompt} onClick={() => run("clip")}>
+            {busy === "clip" ? <Loader2 className="animate-spin" /> : <Film />}
+            {clip.data ? "Regenerate" : "Create clip"} {costs?.["generate_clip"] != null ? `· ${costs["generate_clip"]} cr` : ""}
+          </Button>
+        </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -144,6 +208,7 @@ function Characters({ projectId }: { projectId: string }) {
     setName(""); setDesc("");
     qc.invalidateQueries({ queryKey: key });
   }
+
   async function remove(id: string) {
     const { error } = await supabase.from("characters").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
@@ -151,24 +216,42 @@ function Characters({ projectId }: { projectId: string }) {
   }
 
   return (
-    <section>
-      <p className="mb-2 font-mono text-xs text-muted-foreground">CHARACTERS · KEPT CONSISTENT ACROSS SCENES</p>
+    <Panel title="Characters" description="Optional. Save recurring characters here so your visual prompts stay consistent across scenes.">
       {chars.length > 0 && (
-        <div className="mb-3 divide-y divide-border rounded-xl border border-border bg-surface">
+        <div className="mb-4 space-y-2">
           {chars.map((c) => (
-            <div key={c.id} className="flex items-center gap-3 px-4 py-2">
-              <span className="text-sm font-semibold">{c.name}</span>
-              <span className="flex-1 truncate text-xs text-muted-foreground">{c.description}</span>
-              <Button size="icon" variant="ghost" onClick={() => remove(c.id)} aria-label="Delete character"><Trash2 /></Button>
+            <div key={c.id} className="flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-3">
+              <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-surface font-semibold text-signal">{c.name.charAt(0).toUpperCase()}</div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">{c.name}</p>
+                <p className="truncate text-xs text-muted-foreground">{c.description || "No description yet"}</p>
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => remove(c.id)} aria-label={`Delete ${c.name}`}><Trash2 /></Button>
             </div>
           ))}
         </div>
       )}
-      <div className="flex flex-wrap gap-2">
-        <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="w-40" />
-        <Input placeholder="Look: age, clothing, features…" value={desc} onChange={(e) => setDesc(e.target.value)} className="min-w-60 flex-1" />
-        <Button variant="signal" onClick={add}><Plus /> Add character</Button>
+      <div className="grid gap-2 md:grid-cols-[160px_1fr_auto]">
+        <Input placeholder="Character name" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input placeholder="Appearance, age, clothing, key features…" value={desc} onChange={(e) => setDesc(e.target.value)} />
+        <Button variant="signal" onClick={add} disabled={!name.trim()}><Plus /> Add character</Button>
       </div>
+    </Panel>
+  );
+}
+
+function Panel({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+      <div className="mb-4">
+        <h2 className="font-semibold">{title}</h2>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
+      </div>
+      {children}
     </section>
   );
+}
+
+function Empty({ children }: { children: ReactNode }) {
+  return <div className="rounded-xl border border-dashed border-border bg-surface-raised p-8 text-center text-sm leading-6 text-muted-foreground">{children}</div>;
 }
