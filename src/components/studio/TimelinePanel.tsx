@@ -194,18 +194,41 @@ export function TimelinePanel({ project }: { project: Project }) {
     .find((c:any)=>time>=Number(c.start_seconds)&&time<Number(c.start_seconds)+Number(c.duration_seconds));
   const currentScene = currentVisual ? scenes.find((s:any)=>s.id===currentVisual.scene_id) : null;
 
+  const hasTimeline = clips.length > 0;
+  const hasCaptions = captions.length > 0;
+  const workflowStep = !hasTimeline ? "Build the timeline" : !hasCaptions ? "Generate captions" : "Preview and fine-tune";
+
   return <div className="space-y-5">
-    <div className="rounded-2xl border border-border bg-surface p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><p className="font-mono text-xs text-signal">TIMELINE EDITOR</p><h2 className="text-2xl font-semibold">Cut, align & caption</h2><p className="text-sm text-muted-foreground">Scene-based editing foundation for the render pipeline.</p></div>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="panel" onClick={buildTimeline} disabled={building}><Wand2/>{building?"Building…":"Build timeline"}</Button>
-          <Button size="sm" variant="panel" onClick={generateCaptions} disabled={captioning}><CaptionsIcon/>{captioning?"Generating…":"Generate captions"}</Button>
-          <Button size="icon" variant="panel" onClick={()=>setPlaying(p=>!p)} aria-label={playing?"Pause":"Play"}>{playing?<Pause/>:<Play/>}</Button>
-          <Button size="icon" variant="panel" onClick={()=>{setPlaying(false);setTime(0)}}><RotateCcw/></Button>
+    <section className="rounded-2xl border border-signal/20 bg-signal/5 p-5 sm:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-signal">Timeline workflow</p>
+          <h2 className="mt-1 text-xl font-bold">Assemble the final cut</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Build from your scenes, generate captions, then preview timing before sending the project to Render.
+          </p>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-3 lg:min-w-56">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Next best action</p>
+          <p className="mt-1 text-sm font-semibold">{workflowStep}</p>
         </div>
       </div>
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_280px]">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Button size="sm" variant="signal" onClick={buildTimeline} disabled={building}>
+          <Wand2 />{building ? "Building…" : hasTimeline ? "Rebuild timeline" : "Build timeline"}
+        </Button>
+        <Button size="sm" variant="panel" onClick={generateCaptions} disabled={captioning || !hasTimeline}>
+          <CaptionsIcon />{captioning ? "Generating…" : hasCaptions ? "Regenerate captions" : "Generate captions"}
+        </Button>
+        <Button size="sm" variant="panel" onClick={() => setPlaying(p => !p)} disabled={!hasTimeline}>
+          {playing ? <Pause/> : <Play/>}{playing ? "Pause" : "Preview"}
+        </Button>
+        <Button size="icon" variant="ghost" onClick={() => { setPlaying(false); setTime(0); }} aria-label="Reset preview"><RotateCcw/></Button>
+      </div>
+    </section>
+
+    <div className="rounded-2xl border border-border bg-surface p-4">
+      <div className="mt-0 grid gap-4 lg:grid-cols-[1fr_280px]">
         <div className="overflow-hidden rounded-xl border border-border bg-black">
           <div className={project.format==="short"?"mx-auto aspect-[9/16] max-h-[520px]":"aspect-video"}>
             {currentScene?.clip_path ? <PreviewVideo path={currentScene.clip_path} time={Math.max(0,time-Number(currentVisual.start_seconds))}/> :
