@@ -82,8 +82,8 @@ const AuthenticatedStudioSettingsRoute =
     getParentRoute: () => AuthenticatedStudioRouteRoute,
   } as any)
 const ApiPaddleWebhookRoute = ApiPaddleWebhookRouteImport.update({
-  id: '/api/stripe/webhook',
-  path: '/api/stripe/webhook',
+  id: '/api/paddle/webhook',
+  path: '/api/paddle/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedStudioProjectsIndexRoute =
@@ -109,7 +109,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedStudioAdminRoute
   '/dashboard': typeof AuthenticatedStudioDashboardRoute
   '/settings': typeof AuthenticatedStudioSettingsRoute
-  '/api/stripe/webhook': typeof ApiPaddleWebhookRoute
+  '/api/paddle/webhook': typeof ApiPaddleWebhookRoute
   '/projects/$projectId': typeof AuthenticatedStudioProjectsProjectIdRoute
   '/projects/': typeof AuthenticatedStudioProjectsIndexRoute
 }
@@ -123,7 +123,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedStudioAdminRoute
   '/dashboard': typeof AuthenticatedStudioDashboardRoute
   '/settings': typeof AuthenticatedStudioSettingsRoute
-  '/api/stripe/webhook': typeof ApiPaddleWebhookRoute
+  '/api/paddle/webhook': typeof ApiPaddleWebhookRoute
   '/projects/$projectId': typeof AuthenticatedStudioProjectsProjectIdRoute
   '/projects': typeof AuthenticatedStudioProjectsIndexRoute
 }
@@ -140,7 +140,7 @@ export interface FileRoutesById {
   '/_authenticated/_studio/admin': typeof AuthenticatedStudioAdminRoute
   '/_authenticated/_studio/dashboard': typeof AuthenticatedStudioDashboardRoute
   '/_authenticated/_studio/settings': typeof AuthenticatedStudioSettingsRoute
-  '/api/stripe/webhook': typeof ApiPaddleWebhookRoute
+  '/api/paddle/webhook': typeof ApiPaddleWebhookRoute
   '/_authenticated/_studio/projects/$projectId': typeof AuthenticatedStudioProjectsProjectIdRoute
   '/_authenticated/_studio/projects/': typeof AuthenticatedStudioProjectsIndexRoute
 }
@@ -156,7 +156,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/settings'
-    | '/api/stripe/webhook'
+    | '/api/paddle/webhook'
     | '/projects/$projectId'
     | '/projects/'
   fileRoutesByTo: FileRoutesByTo
@@ -170,7 +170,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/settings'
-    | '/api/stripe/webhook'
+    | '/api/paddle/webhook'
     | '/projects/$projectId'
     | '/projects'
   id:
@@ -186,7 +186,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_studio/admin'
     | '/_authenticated/_studio/dashboard'
     | '/_authenticated/_studio/settings'
-    | '/api/stripe/webhook'
+    | '/api/paddle/webhook'
     | '/_authenticated/_studio/projects/$projectId'
     | '/_authenticated/_studio/projects/'
   fileRoutesById: FileRoutesById
@@ -281,10 +281,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudioSettingsRouteImport
       parentRoute: typeof AuthenticatedStudioRouteRoute
     }
-    '/api/stripe/webhook': {
-      id: '/api/stripe/webhook'
-      path: '/api/stripe/webhook'
-      fullPath: '/api/stripe/webhook'
+    '/api/paddle/webhook': {
+      id: '/api/paddle/webhook'
+      path: '/api/paddle/webhook'
+      fullPath: '/api/paddle/webhook'
       preLoaderRoute: typeof ApiPaddleWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
