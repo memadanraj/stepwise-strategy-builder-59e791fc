@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ChangeEvent } from "react";
-import { ArrowLeft, ArrowDown, ArrowUp, Plus, Trash2, Upload, History, RotateCcw, Sparkles, Loader2 } from "lucide-react";
+import {
+  ArrowLeft, ArrowDown, ArrowUp, Plus, Trash2, Upload, History, RotateCcw, Sparkles, Loader2,
+  PenLine, Clapperboard, ImageIcon, AudioLines, Film, Frame, Play, Youtube, MoreHorizontal,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { draftScenesWithAi } from "@/lib/ai.functions";
@@ -15,6 +18,10 @@ import { ThumbnailPanel } from "@/components/studio/ThumbnailPanel";
 import { YouTubePanel } from "@/components/studio/YouTubePanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { statusLabel } from "@/lib/studio";
 import type { Tables } from "@/integrations/supabase/types";
@@ -66,35 +73,129 @@ const versionsQ = (id: string) => queryOptions({
 
 type Tab = "writing" | "scenes" | "visuals" | "audio" | "timeline" | "thumbnail" | "render" | "youtube" | "assets" | "versions";
 
+const primaryTabs: Array<{ id: Tab; label: string; icon: typeof PenLine; step: number }> = [
+  { id: "writing", label: "Write", icon: PenLine, step: 1 },
+  { id: "scenes", label: "Scenes", icon: Clapperboard, step: 2 },
+  { id: "visuals", label: "Visuals", icon: ImageIcon, step: 3 },
+  { id: "audio", label: "Audio", icon: AudioLines, step: 4 },
+  { id: "timeline", label: "Timeline", icon: Film, step: 5 },
+  { id: "thumbnail", label: "Thumbnail", icon: Frame, step: 6 },
+  { id: "render", label: "Render", icon: Play, step: 7 },
+  { id: "youtube", label: "Publish", icon: Youtube, step: 8 },
+];
+
 function ProjectPage() {
   const { projectId } = Route.useParams();
   const { data: project, isLoading } = useQuery(projectQ(projectId));
   const [tab, setTab] = useState<Tab>("writing");
-  const qc = useQueryClient();
 
-  if (isLoading) return <p className="text-muted-foreground">Loading…</p>;
-  if (!project) return <p className="text-muted-foreground">Project not found. <Link to="/projects" className="text-signal">Back to projects</Link></p>;
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-5">
+        <div className="h-5 w-24 animate-pulse rounded bg-surface-raised" />
+        <div className="h-32 animate-pulse rounded-2xl border border-border bg-surface" />
+        <div className="h-12 animate-pulse rounded-xl border border-border bg-surface" />
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="mx-auto max-w-2xl rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
+        <p className="font-display text-xl font-bold">Project not found</p>
+        <p className="mt-2 text-sm text-muted-foreground">This project may have been deleted or you may not have access to it.</p>
+        <Link to="/projects" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-signal hover:underline">
+          <ArrowLeft className="size-4" /> Back to projects
+        </Link>
+      </div>
+    );
+  }
+
+  const status = statusLabel[project.status] ?? project.status;
+  const activePrimary = primaryTabs.find((item) => item.id === tab);
+  const secondaryActive = tab === "assets" || tab === "versions";
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <Link to="/projects" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Projects</Link>
-      <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-4xl font-bold">{project.title}</h1>
-          <p className="mt-1 font-mono text-xs text-muted-foreground">
-            {project.format === "short" ? "SHORT · 9:16" : "LONG · 16:9"} · {statusLabel[project.status] ?? project.status} · {project.mode.toUpperCase()}
-          </p>
+    <div className="mx-auto max-w-6xl">
+      <div className="flex items-center justify-between gap-3">
+        <Link to="/projects" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="size-4" /> All projects
+        </Link>
+        <Link to="/dashboard" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Dashboard</Link>
+      </div>
+
+      <section className="mt-4 rounded-2xl border border-border bg-surface p-5 sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-signal/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-signal">
+                {project.format === "short" ? "Short · 9:16" : "Long-form · 16:9"}
+              </span>
+              <span className="rounded-full bg-surface-raised px-2.5 py-1 text-xs capitalize text-muted-foreground">{status}</span>
+              <span className="text-xs text-muted-foreground">{project.mode === "simple" ? "Simple mode" : "Advanced mode"}</span>
+            </div>
+            <h1 className="mt-3 truncate text-3xl font-bold tracking-tight sm:text-4xl">{project.title}</h1>
+            {project.idea && <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{project.idea}</p>}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Button size="sm" variant="panel" onClick={() => setTab("render")}>
+              <Play /> Render
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="panel" aria-label="More project options">
+                  <MoreHorizontal /> <span className="hidden sm:inline">More</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Project tools</DropdownMenuLabel>
+                <DropdownMenuItem onSelect={() => setTab("assets")}><Upload className="size-4" /> Assets</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setTab("versions")}><History className="size-4" /> Versions</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => setTab("youtube")}><Youtube className="size-4" /> Publish to YouTube</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      </div>
-      {project.idea && <p className="mt-3 max-w-2xl text-muted-foreground">{project.idea}</p>}
-      <div className="mt-6 flex gap-1 border-b border-border">
-        {(["writing", "scenes", "visuals", "audio", "timeline", "thumbnail", "render", "youtube", "assets", "versions"] as Tab[]).map((t) => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm capitalize ${tab === t ? "border-signal text-foreground" : "border-transparent text-muted-foreground"}`}>
-            {t}
-          </button>
-        ))}
-      </div>
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-border bg-surface p-2 sm:p-3">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {primaryTabs.map((item) => {
+            const Icon = item.icon;
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setTab(item.id)}
+                className={`group inline-flex min-w-max items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${active ? "bg-signal text-signal-foreground shadow-sm" : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"}`}
+                aria-current={active ? "page" : undefined}
+              >
+                <span className={`grid size-5 place-items-center rounded-md text-[10px] ${active ? "bg-white/15" : "bg-surface-raised"}`}>{item.step}</span>
+                <Icon className="size-4" />
+                {item.label}
+              </button>
+            );
+          })}
+          <div className="ml-auto hidden shrink-0 sm:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant={secondaryActive ? "signal" : "ghost"}><MoreHorizontal /> More</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => setTab("assets")}><Upload className="size-4" /> Assets</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setTab("versions")}><History className="size-4" /> Versions</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        <div className="mt-2 flex items-center justify-between px-1 text-[11px] text-muted-foreground">
+          <span>{activePrimary ? `Step ${activePrimary.step} of ${primaryTabs.length} · ${activePrimary.label}` : tab === "assets" ? "Project files" : "Saved versions"}</span>
+          {activePrimary && tab !== "writing" && <button onClick={() => setTab(primaryTabs[Math.max(0, activePrimary.step - 2)].id)} className="hover:text-foreground">← Previous step</button>}
+        </div>
+      </section>
+
       <div className="mt-6">
         {tab === "writing" && <WritingPanel project={project} onScenesChanged={() => setTab("scenes")} />}
         {tab === "scenes" && <Scenes projectId={projectId} />}
