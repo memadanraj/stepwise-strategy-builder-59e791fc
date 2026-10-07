@@ -84,7 +84,7 @@ export function WritingPanel({ project, onScenesChanged }: { project: Tables<"pr
     qc.invalidateQueries({ queryKey: key });
   }
 
-  async function useTitle(t: string) {
+  async function applyTitle(t: string) {
     const { error } = await supabase.from("projects").update({ title: t }).eq("id", project.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Title applied");
@@ -188,7 +188,7 @@ export function WritingPanel({ project, onScenesChanged }: { project: Tables<"pr
                   <div key={t.title} className="rounded-lg border border-border p-3 text-sm">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-semibold leading-5">{t.title}</p>
-                      <Button size="sm" variant="ghost" onClick={() => useTitle(t.title)}>Use</Button>
+                      <Button size="sm" variant="ghost" onClick={() => applyTitle(t.title)}>Use</Button>
                     </div>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">{t.why}</p>
                   </div>
