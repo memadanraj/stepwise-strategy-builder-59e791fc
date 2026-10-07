@@ -82,7 +82,7 @@
   --primary: oklch(0.95 0.015 85);
   --primary-foreground: oklch(0.16 0.006 60);
   --signal: oklch(0.66 0.21 32);
-  --signal-foreground: oklch(0.98 0.01 85);
+  --signal-foreground: oklch(0.18 0.006 60);
   --secondary: oklch(0.25 0.008 60);
   --secondary-foreground: oklch(0.95 0.015 85);
   --muted: oklch(0.24 0.007 60);

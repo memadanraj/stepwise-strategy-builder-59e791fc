@@ -46,6 +46,16 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+function forceHttpsRedirect(request: Request): Response | null {
+  if (process.env.NODE_ENV !== "production") return null;
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const isHttp = forwardedProto === "http" || (!forwardedProto && new URL(request.url).protocol === "http:");
+  if (!isHttp) return null;
+  const url = new URL(request.url);
+  url.protocol = "https:";
+  return new Response(null, { status: 308, headers: { Location: url.toString() } });
+}
+
 function secureResponse(response: Response, request: Request): Response {
   const headers = new Headers(response.headers);
   headers.set("X-Content-Type-Options", "nosniff");
@@ -59,6 +69,8 @@ function secureResponse(response: Response, request: Request): Response {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const redirect = forceHttpsRedirect(request);
+    if (redirect) return redirect;
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

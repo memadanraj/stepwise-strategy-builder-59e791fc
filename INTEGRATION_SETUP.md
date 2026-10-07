@@ -38,6 +38,14 @@ The webhook verifies Paddle's signature before changing subscription state or cr
 
 The Manage Billing button uses Paddle Customer Portal sessions. Use the Paddle sandbox client token and sandbox API credentials together during testing; do not mix sandbox and live credentials.
 
-## 4. Production hardening
+## 4. Privacy, bot protection and analytics
+
+Add `VITE_CF_WEB_ANALYTICS_TOKEN` with the Cloudflare Web Analytics site token. The app respects the analytics consent choice before loading the beacon.
+
+For bot protection, create a Cloudflare Turnstile site, set `VITE_TURNSTILE_SITE_KEY`, and enable CAPTCHA protection in Supabase Auth using Turnstile. The frontend passes the challenge token to Supabase Auth auth flows.
+
+Never put `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `SHOTSTACK_API_KEY`, or other server credentials in `VITE_*` variables. The Paddle browser value is only the public client token.
+
+## 5. Production hardening
 
 Do not commit real provider secrets. Use `.env.example` as the configuration template. Rotate any provider secret that was previously committed.

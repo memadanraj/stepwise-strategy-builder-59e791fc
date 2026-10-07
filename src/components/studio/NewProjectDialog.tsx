@@ -35,13 +35,19 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    if ((form.elements.namedItem("website") as HTMLInputElement | null)?.value) return;
+    const cleanTitle = title.trim();
+    const cleanIdea = idea.trim();
+    if (cleanTitle.length < 2 || cleanTitle.length > 120) { toast.error("Title must be 2–120 characters."); return; }
+    if (cleanIdea.length > 2000) { toast.error("Idea must be 2,000 characters or fewer."); return; }
     setBusy(true);
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setBusy(false); return; }
     const { data: created, error } = await supabase.from("projects").insert({
       user_id: u.user.id,
-      title: title.trim() || "Untitled project",
-      idea: idea.trim() || null,
+      title: cleanTitle,
+      idea: cleanIdea || null,
       format,
       mode,
     }).select("id").single();
@@ -60,13 +66,14 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
       <DialogContent className="bg-surface">
         <DialogHeader><DialogTitle className="font-display text-2xl">New project</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
           <div className="space-y-1.5">
             <Label htmlFor="title">Working title</Label>
-            <Input id="title" placeholder="Why octopuses might be aliens" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <Input id="title" required minLength={2} maxLength={120} placeholder="Why octopuses might be aliens" value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="idea">What's the video about?</Label>
-            <Textarea id="idea" rows={3} placeholder="Describe the idea, audience and tone…" value={idea} onChange={(e) => setIdea(e.target.value)} />
+            <Textarea id="idea" rows={3} maxLength={2000} placeholder="Describe the idea, audience and tone…" value={idea} onChange={(e) => setIdea(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Choice value="long" current={format} onPick={setFormat} title="Long-form" desc="5–20 min, 16:9" />

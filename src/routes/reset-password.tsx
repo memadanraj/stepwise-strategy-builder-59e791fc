@@ -27,8 +27,9 @@ function ResetPassword() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (password.length < 8 || password.length > 72) { toast.error("Password must be 8–72 characters."); return; }
     setBusy(true);
-    const { error } = await supabase.auth.updateUser({ password });
+    const { error } = await supabase.auth.updateUser({ password } as any);
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Password updated");
@@ -42,7 +43,7 @@ function ResetPassword() {
         <h1 className="text-2xl font-bold">Set a new password</h1>
         <div className="space-y-1.5">
           <Label htmlFor="pw">New password</Label>
-          <Input id="pw" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input id="pw" type="password" required minLength={8} maxLength={72} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         <Button variant="signal" className="w-full" disabled={busy}>{busy ? "Saving…" : "Update password"}</Button>
       </form>
