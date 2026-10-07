@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileWidget } from "@/components/common/TurnstileWidget";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -31,6 +32,8 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const handleCaptcha = useCallback((token: string | null) => setCaptchaToken(token), []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -64,13 +67,13 @@ function AuthPage() {
     setNotice(null);
     try {
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await (supabase.auth.signInWithPassword as any)({ email, password, options: captchaToken ? { captchaToken } : undefined });
         if (error) throw error;
       } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin + "/dashboard", data: { full_name: name } },
+          options: { emailRedirectTo: window.location.origin + "/dashboard", data: { full_name: name }, ...(captchaToken ? { captchaToken } : {}) },
         });
         if (error) throw error;
         setNotice("Check your inbox to confirm your email, then sign in.");
@@ -120,12 +123,12 @@ function AuthPage() {
           {mode === "signup" && (
             <div className="space-y-1.5">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input id="name" maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
           )}
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input id="email" type="email" required maxLength={255} autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           {mode !== "forgot" && (
             <div className="space-y-1.5">
@@ -137,10 +140,10 @@ function AuthPage() {
                   </button>
                 )}
               </div>
-              <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input id="password" type="password" required minLength={8} maxLength={72} autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           )}
-          {notice && <p className="rounded-md bg-surface-raised p-3 text-sm text-muted-foreground">{notice}</p>}
+          <TurnstileWidget onToken={handleCaptcha} />\n          {notice && <p className="rounded-md bg-surface-raised p-3 text-sm text-muted-foreground">{notice}</p>}
           <Button variant="signal" className="w-full" disabled={busy}>
             {busy ? "Please wait…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}
           </Button>
