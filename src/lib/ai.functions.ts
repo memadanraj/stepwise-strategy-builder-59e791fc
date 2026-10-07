@@ -59,7 +59,7 @@ export const draftScenesWithAi = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     try {
-      const apiKey = process.env["LOVABLE_API_KEY"];
+      const apiKey = process.env["OPENAI_API_KEY"];
       if (!apiKey) throw new Error("AI is not configured");
       const { generateStructured } = await import("./ai-gateway.server");
       const short = project.format === "short";
