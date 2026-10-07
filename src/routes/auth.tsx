@@ -78,8 +78,9 @@ function AuthPage() {
         if (error) throw error;
         setNotice("Check your inbox to confirm your email, then sign in.");
       } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+        const { error } = await (supabase.auth.resetPasswordForEmail as any)(email, {
+          redirectTo: window.location.origin + "/reset-password",
+          ...(captchaToken ? { captchaToken } : {}),
         });
         if (error) throw error;
         setNotice("If that email has an account, a reset link is on its way.");
@@ -88,6 +89,7 @@ function AuthPage() {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setBusy(false);
+      setCaptchaToken(null);
     }
   }
 
@@ -143,7 +145,8 @@ function AuthPage() {
               <Input id="password" type="password" required minLength={8} maxLength={72} autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           )}
-          <TurnstileWidget onToken={handleCaptcha} />\n          {notice && <p className="rounded-md bg-surface-raised p-3 text-sm text-muted-foreground">{notice}</p>}
+          <TurnstileWidget onToken={handleCaptcha} />
+          {notice && <p className="rounded-md bg-surface-raised p-3 text-sm text-muted-foreground">{notice}</p>}
           <Button variant="signal" className="w-full" disabled={busy}>
             {busy ? "Please wait…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}
           </Button>
