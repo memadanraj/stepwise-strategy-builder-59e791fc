@@ -11,13 +11,13 @@ import {
   createSubscriptionCheckout,
   getBillingStatus,
 } from "@/lib/billing.functions";
-import { getPaddle } from "@/lib/paddle.client";
 
 function money(cents: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 }
 
 async function openPaddleCheckout(transactionId: string) {
+  const { getPaddle } = await import("@/lib/paddle");
   const paddle = await getPaddle();
   paddle.Checkout.open({
     transactionId,
