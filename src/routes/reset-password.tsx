@@ -25,7 +25,8 @@ function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);\n  const handleCaptcha = useCallback((token: string | null) => setCaptchaToken(token), []);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const handleCaptcha = useCallback((token: string | null) => setCaptchaToken(token), []);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -48,6 +49,7 @@ function ResetPassword() {
           <Label htmlFor="pw">New password</Label>
           <Input id="pw" type="password" required minLength={8} maxLength={72} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
+        <TurnstileWidget onToken={handleCaptcha} />
         <Button variant="signal" className="w-full" disabled={busy}>{busy ? "Saving…" : "Update password"}</Button>
       </form>
     </div>
