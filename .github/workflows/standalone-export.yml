@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - standalone-export-lovable-free
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
