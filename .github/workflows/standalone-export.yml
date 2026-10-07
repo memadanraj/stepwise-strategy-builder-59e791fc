@@ -1,0 +1,301 @@
+name: Build standalone Lovable-free export
+
+on:
+  push:
+    branches:
+      - standalone-export-lovable-free
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Remove Lovable dependencies and integrations
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf .lovable
+          rm -rf src/integrations/lovable
+          rm -f src/lib/lovable-error-reporting.ts
+
+          node <<'NODE'
+          const fs = require("fs");
+
+          const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          delete packageJson.dependencies?.["@lovable.dev/cloud-auth-js"];
+          delete packageJson.devDependencies?.["@lovable.dev/vite-tanstack-config"];
+          packageJson.scripts = {
+            ...packageJson.scripts,
+            start: "node .output/server/index.mjs",
+          };
+          fs.writeFileSync("package.json", JSON.stringify(packageJson, null, 2) + "\\n");
+
+          fs.writeFileSync("vite.config.ts", [
+            'import { defineConfig } from "vite";',
+            'import { tanstackStart } from "@tanstack/react-start/plugin/vite";',
+            'import viteReact from "@vitejs/plugin-react";',
+            'import { nitro } from "nitro/vite";',
+            'import tailwindcss from "@tailwindcss/vite";',
+            'import tsconfigPaths from "vite-tsconfig-paths";',
+            '',
+            'export default defineConfig({',
+            '  plugins: [',
+            '    tanstackStart(),',
+            '    nitro(),',
+            '    tailwindcss(),',
+            '    tsconfigPaths(),',
+            '    viteReact(),',
+            '  ],',
+            '});',
+            '',
+          ].join("\\n"));
+
+          let auth = fs.readFileSync("src/routes/auth.tsx", "utf8");
+          auth = auth.replace('import { lovable } from "@/integrations/lovable/index";\\n', "");
+          auth = auth.replace(
+            '  async function google() {\\n    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });\\n    if (result.error) toast.error(result.error.message ?? "Google sign-in failed");\\n  }',
+            [
+              '  async function google() {',
+              '    const { data, error } = await supabase.auth.signInWithOAuth({',
+              '      provider: "google",',
+              '      options: { redirectTo: window.location.origin + "/auth" },',
+              '    });',
+              '    if (error) toast.error(error.message ?? "Google sign-in failed");',
+              '    else if (data.url) window.location.assign(data.url);',
+              '  }',
+            ].join("\\n")
+          );
+          fs.writeFileSync("src/routes/auth.tsx", auth);
+
+          for (const file of ["src/integrations/supabase/auth-middleware.ts", "src/integrations/supabase/client.server.ts"]) {
+            let text = fs.readFileSync(file, "utf8");
+            text = text.replaceAll("Connect Supabase in Lovable Cloud.", "Configure your Supabase environment variables.");
+            fs.writeFileSync(file, text);
+          }
+
+          let envExample = fs.readFileSync(".env.example", "utf8");
+          envExample = envExample.replace(/^LOVABLE_API_KEY=.*\\n?/m, "");
+          fs.writeFileSync(".env.example", envExample);
+
+          let agents = fs.readFileSync("AGENTS.md", "utf8");
+          agents = agents.replace(/<!-- LOVABLE:BEGIN -->[\\s\\S]*?<!-- LOVABLE:END -->\\n?/m, "");
+          fs.writeFileSync("AGENTS.md", agents.trimEnd() + "\\n");
+
+          let setup = fs.readFileSync("INTEGRATION_SETUP.md", "utf8");
+          setup = setup.replace("Set LOVABLE_API_KEY and the provider keys required by the existing AI, audio, rendering, and YouTube features.", "Set the provider keys required by the existing AI, audio, rendering, and YouTube features.");
+          fs.writeFileSync("INTEGRATION_SETUP.md", setup);
+
+          let readme = fs.readFileSync("README.md", "utf8");
+          if (!readme.includes("Self-hosting")) {
+            readme += "\\n## Self-hosting\\n\\nThis standalone package is independent of Lovable. Configure Supabase, Paddle, AI/audio/rendering providers, and public VITE_* variables using SELF_HOSTING.md.\\n";
+          }
+          fs.writeFileSync("README.md", readme);
+          NODE
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          bun install
+
+      - name: Run lint, tests, and production build
+        id: checks
+        shell: bash
+        run: |
+          set +e
+          : > test-results.txt
+
+          echo "=== bun --version ===" | tee -a test-results.txt
+          bun --version 2>&1 | tee -a test-results.txt
+
+          echo "=== bun run lint ===" | tee -a test-results.txt
+          bun run lint 2>&1 | tee -a test-results.txt
+          LINT_CODE=\${PIPESTATUS[0]}
+
+          echo "=== bun test ===" | tee -a test-results.txt
+          bun test 2>&1 | tee -a test-results.txt
+          TEST_CODE=\${PIPESTATUS[0]}
+
+          echo "=== bun run build ===" | tee -a test-results.txt
+          bun run build 2>&1 | tee -a test-results.txt
+          BUILD_CODE=\${PIPESTATUS[0]}
+
+          printf "\\nCHECK_STATUS lint=%s test=%s build=%s\\n" "$LINT_CODE" "$TEST_CODE" "$BUILD_CODE" | tee -a test-results.txt
+
+          if [ "$LINT_CODE" -ne 0 ] || [ "$TEST_CODE" -ne 0 ] || [ "$BUILD_CODE" -ne 0 ]; then
+            echo "One or more checks failed; the report and package will still be uploaded." | tee -a test-results.txt
+            echo "failed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "failed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Add self-hosting guide
+        shell: bash
+        run: |
+          cat > SELF_HOSTING.md <<'EOF'
+          # Reelforge — Self-hosting
+
+          This package is designed to run independently of Lovable.
+
+          ## Requirements
+
+          - Node.js 20+ or Bun
+          - A Supabase project for auth, database, and storage
+          - Paddle for billing
+          - API credentials for the AI, audio, rendering, and YouTube features you enable
+
+          ## Local development
+
+          1. Copy .env.example to .env.
+          2. Fill the required server-only and VITE_* variables.
+          3. Apply the SQL migrations in drizzle/migrations to your Supabase database in order.
+          4. Install dependencies with bun install or npm install.
+          5. Start the app with bun run dev or npm run dev.
+
+          ## Production with Node.js
+
+          Build:
+
+              bun install
+              bun run build
+
+          Start:
+
+              bun run start
+
+          The Nitro Node output is .output/server/index.mjs.
+
+          ## Reverse proxy and HTTPS
+
+          Put the Node process behind Nginx, Caddy, Traefik, or your platform load balancer. Set NODE_ENV=production.
+
+          The application already enforces HTTPS redirects in production and emits security headers.
+
+          ## Supabase
+
+          Set:
+
+              SUPABASE_URL=
+              SUPABASE_PUBLISHABLE_KEY=
+              SUPABASE_SERVICE_ROLE_KEY=
+
+          Enable the Google OAuth provider in Supabase if you want Google sign-in.
+
+          ## Paddle
+
+          Sandbox:
+
+              PADDLE_ENVIRONMENT=sandbox
+              VITE_PADDLE_ENVIRONMENT=sandbox
+              PADDLE_API_KEY=
+              PADDLE_WEBHOOK_SECRET=
+              VITE_PADDLE_CLIENT_TOKEN=
+
+          Configure your Paddle webhook destination as:
+
+              https://YOUR-DOMAIN/api/paddle/webhook
+
+          Store the real Paddle price IDs in plans.paddle_price_id and credit_packs.paddle_price_id.
+
+          ## Security
+
+          Never put server secrets in VITE_* variables. In particular, never expose PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY, or provider secret keys to the browser.
+
+          ## Docker
+
+          A generic Node/Nitro Dockerfile is included for platforms that build from source.
+          EOF
+
+          cat > Dockerfile <<'EOF'
+          FROM oven/bun:latest AS build
+          WORKDIR /app
+
+          COPY package.json bun.lock ./
+          RUN bun install --frozen-lockfile
+
+          COPY . .
+          RUN bun run build
+
+          FROM node:20-alpine
+          WORKDIR /app
+
+          ENV NODE_ENV=production
+          ENV PORT=3000
+
+          COPY --from=build /app/.output ./.output
+
+          EXPOSE 3000
+
+          CMD ["node", ".output/server/index.mjs"]
+          EOF
+
+          cat > .dockerignore <<'EOF'
+          node_modules
+          .output
+          dist
+          .git
+          .github
+          .env
+          .env.*
+          !.env.example
+          test-results.txt
+          EOF
+
+      - name: Prepare clean standalone package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p standalone-package
+
+          rsync -a --delete \
+            --exclude=".git/" \
+            --exclude=".github/" \
+            --exclude="node_modules/" \
+            --exclude=".output/" \
+            --exclude="dist/" \
+            --exclude="standalone-package/" \
+            ./ standalone-package/
+
+          printf '%s\\n' "Source commit: $GITHUB_SHA" > standalone-package/SOURCE_COMMIT.txt
+          printf '%s\\n' "Standalone Lovable-free export generated outside the GitHub working tree." > standalone-package/EXPORT_INFO.txt
+
+          if grep -RniE "lovable|@lovable\\.dev|LOVABLE_API_KEY|src/integrations/lovable" standalone-package \
+            --exclude-dir=node_modules \
+            --exclude-dir=.git \
+            --exclude='*.lock' \
+            --exclude='SOURCE_COMMIT.txt' \
+            --exclude='EXPORT_INFO.txt'; then
+            echo "Lovable references remain in the standalone package."
+            exit 1
+          fi
+
+          (cd standalone-package && zip -qr ../reelforge-standalone-lovable-free.zip .)
+
+      - name: Upload standalone ZIP and test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reelforge-standalone-lovable-free
+          path: |
+            reelforge-standalone-lovable-free.zip
+            test-results.txt
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Fail job if checks failed
+        if: steps.checks.outputs.failed == 'true'
+        shell: bash
+        run: exit 1
