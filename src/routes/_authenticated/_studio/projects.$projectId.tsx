@@ -4,6 +4,7 @@ import { useState, type ChangeEvent } from "react";
 import {
   ArrowLeft, ArrowDown, ArrowUp, Plus, Trash2, Upload, History, RotateCcw, Sparkles, Loader2,
   PenLine, Clapperboard, ImageIcon, AudioLines, Film, Frame, Play, Youtube, MoreHorizontal,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -73,7 +74,7 @@ const versionsQ = (id: string) => queryOptions({
 
 type Tab = "writing" | "scenes" | "visuals" | "audio" | "timeline" | "thumbnail" | "render" | "youtube" | "assets" | "versions";
 
-const primaryTabs: Array<{ id: Tab; label: string; icon: typeof PenLine; step: number }> = [
+const primaryTabs: Array<{ id: Tab; label: string; icon: LucideIcon; step: number }> = [
   { id: "writing", label: "Write", icon: PenLine, step: 1 },
   { id: "scenes", label: "Scenes", icon: Clapperboard, step: 2 },
   { id: "visuals", label: "Visuals", icon: ImageIcon, step: 3 },
