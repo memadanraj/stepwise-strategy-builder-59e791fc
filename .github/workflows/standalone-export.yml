@@ -137,22 +137,23 @@ jobs:
 
           echo "=== bun run lint ===" | tee -a test-results.txt
           bun run lint 2>&1 | tee -a test-results.txt
-          LINT_CODE=\${PIPESTATUS[0]}
+          LINT_CODE=$?
 
-          echo "=== bun test ===" | tee -a test-results.txt
-          bun test 2>&1 | tee -a test-results.txt
-          TEST_CODE=\${PIPESTATUS[0]}
+          echo "=== bun run test ===" | tee -a test-results.txt
+          bun run test 2>&1 | tee -a test-results.txt
+          TEST_CODE=$?
 
           echo "=== bun run build ===" | tee -a test-results.txt
           bun run build 2>&1 | tee -a test-results.txt
-          BUILD_CODE=\${PIPESTATUS[0]}
+          BUILD_CODE=$?
 
           printf "\nCHECK_STATUS lint=%s test=%s build=%s\n" "$LINT_CODE" "$TEST_CODE" "$BUILD_CODE" | tee -a test-results.txt
 
           if [ "$LINT_CODE" -ne 0 ] || [ "$TEST_CODE" -ne 0 ] || [ "$BUILD_CODE" -ne 0 ]; then
-            echo "One or more checks failed; the report and package will still be uploaded." | tee -a test-results.txt
+            echo "One or more checks failed." | tee -a test-results.txt
             echo "failed=true" >> "$GITHUB_OUTPUT"
           else
+            echo "All checks passed." | tee -a test-results.txt
             echo "failed=false" >> "$GITHUB_OUTPUT"
           fi
 
