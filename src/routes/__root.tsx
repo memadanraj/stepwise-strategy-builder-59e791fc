@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { CookieConsent } from "@/components/common/CookieConsent";
 
 function NotFoundComponent() {
   return (
@@ -80,8 +81,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { httpEquiv: "Content-Security-Policy", content: "upgrade-insecure-requests" },
+      { name: "theme-color", content: "#0f1115" },
       { title: "Reelforge — AI YouTube Studio" },
       { name: "description", content: "Research, write, generate, edit and publish YouTube videos with AI." },
+      { property: "og:site_name", content: "Reelforge" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -136,6 +140,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster />
+      <CookieConsent />
     </QueryClientProvider>
   );
 }
