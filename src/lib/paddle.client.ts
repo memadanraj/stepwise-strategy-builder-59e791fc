@@ -6,7 +6,7 @@ type PaddleGlobal = {
   Checkout: PaddleCheckout;
 };
 declare global {
-  interface Window { Paddle?: PaddleGlobal; __reelforgePaddleInitialized?: boolean; }
+  interface Window { Paddle?: PaddleGlobal; __dcxoraPaddleInitialized?: boolean; }
 }
 let paddleScriptPromise: Promise<PaddleGlobal> | undefined;
 function loadPaddleScript() {
@@ -34,10 +34,10 @@ export async function getPaddle() {
   const token = import.meta.env["VITE_PADDLE_CLIENT_TOKEN"] as string | undefined;
   if (!token) throw new Error("Missing VITE_PADDLE_CLIENT_TOKEN environment variable.");
   const paddle = await loadPaddleScript();
-  if (!window.__reelforgePaddleInitialized) {
+  if (!window.__dcxoraPaddleInitialized) {
     const environment = import.meta.env["VITE_PADDLE_ENVIRONMENT"] as string | undefined;
     paddle.Initialize({ token, ...(environment === "sandbox" ? { environment: "sandbox" as const } : {}) });
-    window.__reelforgePaddleInitialized = true;
+    window.__dcxoraPaddleInitialized = true;
   }
   return paddle;
 }
