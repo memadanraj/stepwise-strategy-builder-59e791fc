@@ -6,7 +6,7 @@ const SCRIPT_ID = "cf-web-analytics";
 export function CloudflareAnalytics() {
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const token = import.meta.env.VITE_CF_WEB_ANALYTICS_TOKEN as string | undefined;
+    const token = import.meta.env["VITE_CF_WEB_ANALYTICS_TOKEN"] as string | undefined;
     if (!token || getCookieConsent() !== "accepted" || document.getElementById(SCRIPT_ID)) return;
 
     const script = document.createElement("script");
@@ -24,7 +24,7 @@ export function CloudflareAnalytics() {
   useEffect(() => {
     const refresh = () => {
       if (getCookieConsent() === "accepted") {
-        const token = import.meta.env.VITE_CF_WEB_ANALYTICS_TOKEN as string | undefined;
+        const token = import.meta.env["VITE_CF_WEB_ANALYTICS_TOKEN"] as string | undefined;
         if (!token || document.getElementById(SCRIPT_ID)) return;
         const script = document.createElement("script");
         script.id = SCRIPT_ID;

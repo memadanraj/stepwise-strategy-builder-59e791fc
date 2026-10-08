@@ -38,7 +38,7 @@ async function verifySignature(payload: string, header: string, secret: string) 
 }
 async function admin() { return (await import("@/integrations/supabase/client.server")).supabaseAdmin; }
 async function paddleApi(path: string) {
-  const environment = process.env.PADDLE_ENVIRONMENT === "sandbox" ? "sandbox" : "live";
+  const environment = process.env["PADDLE_ENVIRONMENT"] === "sandbox" ? "sandbox" : "live";
   const baseUrl = environment === "sandbox" ? "https://sandbox-api.paddle.com" : "https://api.paddle.com";
   const response = await fetch(`${baseUrl}/${path}`, { headers: { Authorization: `Bearer ${env("PADDLE_API_KEY")}`, "Paddle-Version": "1" } });
   const payload: any = await response.json().catch(() => ({}));
