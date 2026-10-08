@@ -20,9 +20,9 @@ import { Route as YoutubeCallbackRouteImport } from './routes/youtube.callback'
 import { Route as AuthenticatedStudioAdminRouteImport } from './routes/_authenticated/_studio/admin'
 import { Route as AuthenticatedStudioDashboardRouteImport } from './routes/_authenticated/_studio/dashboard'
 import { Route as AuthenticatedStudioSettingsRouteImport } from './routes/_authenticated/_studio/settings'
-import { Route as ApiPaddleWebhookRouteImport } from './routes/api.paddle.webhook'
 import { Route as AuthenticatedStudioProjectsIndexRouteImport } from './routes/_authenticated/_studio/projects.index'
 import { Route as AuthenticatedStudioProjectsProjectIdRouteImport } from './routes/_authenticated/_studio/projects.$projectId'
+import { Route as ApiPublicPaddleWebhookRouteImport } from './routes/api/public/paddle.webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -81,11 +81,6 @@ const AuthenticatedStudioSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedStudioRouteRoute,
   } as any)
-const ApiPaddleWebhookRoute = ApiPaddleWebhookRouteImport.update({
-  id: '/api/paddle/webhook',
-  path: '/api/paddle/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedStudioProjectsIndexRoute =
   AuthenticatedStudioProjectsIndexRouteImport.update({
     id: '/projects/',
@@ -98,6 +93,11 @@ const AuthenticatedStudioProjectsProjectIdRoute =
     path: '/projects/$projectId',
     getParentRoute: () => AuthenticatedStudioRouteRoute,
   } as any)
+const ApiPublicPaddleWebhookRoute = ApiPublicPaddleWebhookRouteImport.update({
+  id: '/api/public/paddle/webhook',
+  path: '/api/public/paddle/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -109,8 +109,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedStudioAdminRoute
   '/dashboard': typeof AuthenticatedStudioDashboardRoute
   '/settings': typeof AuthenticatedStudioSettingsRoute
-  '/api/paddle/webhook': typeof ApiPaddleWebhookRoute
   '/projects/$projectId': typeof AuthenticatedStudioProjectsProjectIdRoute
+  '/api/public/paddle/webhook': typeof ApiPublicPaddleWebhookRoute
   '/projects/': typeof AuthenticatedStudioProjectsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -123,8 +123,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedStudioAdminRoute
   '/dashboard': typeof AuthenticatedStudioDashboardRoute
   '/settings': typeof AuthenticatedStudioSettingsRoute
-  '/api/paddle/webhook': typeof ApiPaddleWebhookRoute
   '/projects/$projectId': typeof AuthenticatedStudioProjectsProjectIdRoute
+  '/api/public/paddle/webhook': typeof ApiPublicPaddleWebhookRoute
   '/projects': typeof AuthenticatedStudioProjectsIndexRoute
 }
 export interface FileRoutesById {
@@ -140,8 +140,8 @@ export interface FileRoutesById {
   '/_authenticated/_studio/admin': typeof AuthenticatedStudioAdminRoute
   '/_authenticated/_studio/dashboard': typeof AuthenticatedStudioDashboardRoute
   '/_authenticated/_studio/settings': typeof AuthenticatedStudioSettingsRoute
-  '/api/paddle/webhook': typeof ApiPaddleWebhookRoute
   '/_authenticated/_studio/projects/$projectId': typeof AuthenticatedStudioProjectsProjectIdRoute
+  '/api/public/paddle/webhook': typeof ApiPublicPaddleWebhookRoute
   '/_authenticated/_studio/projects/': typeof AuthenticatedStudioProjectsIndexRoute
 }
 export interface FileRouteTypes {
@@ -156,8 +156,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/settings'
-    | '/api/paddle/webhook'
     | '/projects/$projectId'
+    | '/api/public/paddle/webhook'
     | '/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -170,8 +170,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/settings'
-    | '/api/paddle/webhook'
     | '/projects/$projectId'
+    | '/api/public/paddle/webhook'
     | '/projects'
   id:
     | '__root__'
@@ -186,8 +186,8 @@ export interface FileRouteTypes {
     | '/_authenticated/_studio/admin'
     | '/_authenticated/_studio/dashboard'
     | '/_authenticated/_studio/settings'
-    | '/api/paddle/webhook'
     | '/_authenticated/_studio/projects/$projectId'
+    | '/api/public/paddle/webhook'
     | '/_authenticated/_studio/projects/'
   fileRoutesById: FileRoutesById
 }
@@ -199,7 +199,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   YoutubeCallbackRoute: typeof YoutubeCallbackRoute
-  ApiPaddleWebhookRoute: typeof ApiPaddleWebhookRoute
+  ApiPublicPaddleWebhookRoute: typeof ApiPublicPaddleWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -281,13 +281,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudioSettingsRouteImport
       parentRoute: typeof AuthenticatedStudioRouteRoute
     }
-    '/api/paddle/webhook': {
-      id: '/api/paddle/webhook'
-      path: '/api/paddle/webhook'
-      fullPath: '/api/paddle/webhook'
-      preLoaderRoute: typeof ApiPaddleWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/_studio/projects/': {
       id: '/_authenticated/_studio/projects/'
       path: '/projects'
@@ -301,6 +294,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/projects/$projectId'
       preLoaderRoute: typeof AuthenticatedStudioProjectsProjectIdRouteImport
       parentRoute: typeof AuthenticatedStudioRouteRoute
+    }
+    '/api/public/paddle/webhook': {
+      id: '/api/public/paddle/webhook'
+      path: '/api/public/paddle/webhook'
+      fullPath: '/api/public/paddle/webhook'
+      preLoaderRoute: typeof ApiPublicPaddleWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -348,7 +348,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   YoutubeCallbackRoute: YoutubeCallbackRoute,
-  ApiPaddleWebhookRoute: ApiPaddleWebhookRoute,
+  ApiPublicPaddleWebhookRoute: ApiPublicPaddleWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

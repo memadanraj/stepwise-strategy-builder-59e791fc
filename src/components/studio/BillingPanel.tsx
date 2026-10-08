@@ -198,7 +198,7 @@ export function BillingPanel({ currentPlan, credits }: { currentPlan: string; cr
       </section>
 
       <div className="rounded-lg border border-border bg-surface-raised p-4 text-xs text-muted-foreground">
-        <Sparkles className="mr-1 inline size-3 text-signal" /> Payments are processed by Paddle. Reelforge updates plans and credits from verified webhook events rather than trusting the checkout redirect.
+        <Sparkles className="mr-1 inline size-3 text-signal" /> Payments are processed by Paddle. DCXORA updates plans and credits from verified webhook events rather than trusting the checkout redirect.
       </div>
     </div>
   );
