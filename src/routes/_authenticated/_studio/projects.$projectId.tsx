@@ -193,7 +193,7 @@ function ProjectPage() {
         </div>
         <div className="mt-2 flex items-center justify-between px-1 text-[11px] text-muted-foreground">
           <span>{activePrimary ? `Step ${activePrimary.step} of ${primaryTabs.length} · ${activePrimary.label}` : tab === "assets" ? "Project files" : "Saved versions"}</span>
-          {activePrimary && tab !== "writing" && <button onClick={() => setTab(primaryTabs[Math.max(0, activePrimary.step - 2)].id)} className="hover:text-foreground">← Previous step</button>}
+          {activePrimary && tab !== "writing" && <button onClick={() => setTab(primaryTabs[Math.max(0, activePrimary.step - 2)]!.id)} className="hover:text-foreground">← Previous step</button>}
         </div>
       </section>
 

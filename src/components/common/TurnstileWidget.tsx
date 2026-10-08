@@ -30,7 +30,7 @@ function loadTurnstile() {
     script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
     script.async = true;
     script.defer = true;
-    script.dataset.turnstile = "true";
+    script.dataset["turnstile"] = "true";
     script.addEventListener("load", () => resolve(), { once: true });
     script.addEventListener("error", () => reject(new Error("Turnstile failed to load.")), { once: true });
     document.head.appendChild(script);

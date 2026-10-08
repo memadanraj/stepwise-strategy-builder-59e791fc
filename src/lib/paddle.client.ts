@@ -22,7 +22,7 @@ function loadPaddleScript() {
     const script = document.createElement("script");
     script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
     script.async = true;
-    script.dataset.paddle = "v2";
+    script.dataset["paddle"] = "v2";
     script.addEventListener("load", () => window.Paddle ? resolve(window.Paddle) : reject(new Error("Paddle.js loaded without the Paddle global.")), { once: true });
     script.addEventListener("error", () => reject(new Error("Failed to load Paddle.js.")), { once: true });
     document.head.appendChild(script);
