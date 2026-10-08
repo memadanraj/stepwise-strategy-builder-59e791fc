@@ -9,11 +9,11 @@ export const Route = createFileRoute("/privacy")({
       { property: "og:title", content: "Privacy Policy — Reelforge" },
       { property: "og:description", content: "How Reelforge handles account, project, billing and analytics data." },
       { property: "og:type", content: "article" },
-      { property: "og:image", content: "https://reelforge.app/og-image.jpg" },
+      { property: "og:image", content: "https://dcxora.app/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:image", content: "https://reelforge.app/og-image.jpg" },
+      { name: "twitter:image", content: "https://dcxora.app/og-image.jpg" },
     ],
-    links: [{ rel: "canonical", href: "https://reelforge.app/privacy" }],
+    links: [{ rel: "canonical", href: "https://dcxora.app/privacy" }],
   }),
   component: Privacy,
 });
@@ -85,7 +85,7 @@ function Privacy() {
       </section>
       <section>
         <h2>Contact</h2>
-        <p>For privacy questions or data requests, email <a className="underline" href="mailto:privacy@reelforge.app">privacy@reelforge.app</a>.</p>
+        <p>For privacy questions or data requests, email <a className="underline" href="mailto:privacy@dcxora.app">privacy@dcxora.app</a>.</p>
       </section>
     </LegalLayout>
   );

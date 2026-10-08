@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 
-const KEY = "reelforge_cookie_consent";
+const KEY = "dcxora_cookie_consent";
 
 export function getCookieConsent(): "accepted" | "declined" | null {
   if (typeof window === "undefined") return null;

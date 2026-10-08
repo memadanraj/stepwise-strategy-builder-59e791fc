@@ -6,4 +6,4 @@ Disallow: /settings
 Disallow: /admin
 Disallow: /reset-password
 
-Sitemap: https://reelforge.app/sitemap.xml
+Sitemap: https://dcxora.app/sitemap.xml

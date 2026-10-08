@@ -23,17 +23,17 @@ export async function reportServerError(error:unknown, context:Record<string,unk
       level:"error",
       message:{message},
       exception:stack?{values:[{type:error instanceof Error?error.constructor.name:"Error",value:message,stacktrace:{frames:[]},mechanism:{handled:false}}]}:undefined,
-      tags:{service:"reelforge-server"},
+      tags:{service:"dcxora-server"},
       extra:context,
-      server_name:process.env["APP_NAME"]||"reelforge",
+      server_name:process.env["APP_NAME"]||"dcxora",
     };
-    const envelope=`${JSON.stringify({event_id:eventId,sdk:{name:"reelforge-server",version:"1.0.0"}})}\n${JSON.stringify({type:"event"})}\n${JSON.stringify(event)}`;
+    const envelope=`${JSON.stringify({event_id:eventId,sdk:{name:"dcxora-server",version:"1.0.0"}})}\n${JSON.stringify({type:"event"})}\n${JSON.stringify(event)}`;
     const endpoint=`${url.origin}${url.pathname.substring(0,url.pathname.lastIndexOf("/"))}/envelope/`;
     await fetch(endpoint,{
       method:"POST",
       headers:{
         "Content-Type":"application/x-sentry-envelope",
-        "X-Sentry-Auth":`Sentry sentry_version=7,sentry_key=${publicKey},sentry_client=reelforge-server/1.0.0`,
+        "X-Sentry-Auth":`Sentry sentry_version=7,sentry_key=${publicKey},sentry_client=dcxora-server/1.0.0`,
       },
       body:envelope,
     });
