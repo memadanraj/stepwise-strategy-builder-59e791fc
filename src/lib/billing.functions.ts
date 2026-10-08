@@ -12,7 +12,7 @@ type PaddleMethod = "GET" | "POST" | "PATCH";
 
 async function paddle(path: string, method: PaddleMethod, body?: unknown) {
   const apiKey = paddleEnv("PADDLE_API_KEY");
-  const environment = process.env.PADDLE_ENVIRONMENT === "sandbox" ? "sandbox" : "live";
+  const environment = process.env["PADDLE_ENVIRONMENT"] === "sandbox" ? "sandbox" : "live";
   const baseUrl = environment === "sandbox" ? "https://sandbox-api.paddle.com" : "https://api.paddle.com";
   const response = await fetch(`${baseUrl}/${path}`, {
     method,

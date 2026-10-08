@@ -61,7 +61,7 @@ export function WritingPanel({ project, onScenesChanged }: { project: Tables<"pr
       if (idea.trim() !== (project.idea ?? "")) await saveIdea();
       if (slug === "script_to_scenes" && script !== (writing?.script ?? "")) await saveScript(true);
       const res = slug === "full_script"
-        ? await fns.full_script({ data: { projectId: project.id, hook: hook ?? undefined } })
+        ? await fns["full_script"]({ data: { projectId: project.id, hook: hook ?? undefined } })
         : await fns[slug]({ data: { projectId: project.id } });
       if (!res.ok) toast.error(res.error);
       else toast.success(typeof res.value === "number" ? `Created ${res.value} scenes` : success);
@@ -150,7 +150,7 @@ export function WritingPanel({ project, onScenesChanged }: { project: Tables<"pr
       </Section>
 
       <Section number="02" title="Research" action={
-        <AiBtn slug="topic_research" label={research ? `Redo · ${costs.topic_research ?? "…"} cr` : `Research · ${costs.topic_research ?? "…"} cr`} icon={Search} success="Research ready" />
+        <AiBtn slug="topic_research" label={research ? `Redo · ${costs["topic_research"] ?? "…"} cr` : `Research · ${costs["topic_research"] ?? "…"} cr`} icon={Search} success="Research ready" />
       }>
         {research ? (
           <div className="grid gap-4 md:grid-cols-2">
@@ -164,7 +164,7 @@ export function WritingPanel({ project, onScenesChanged }: { project: Tables<"pr
       </Section>
 
       <Section number="03" title="Hooks & titles" action={
-        <AiBtn slug="hooks_titles" label={hooks.length ? `Regenerate · ${costs.hooks_titles ?? "…"} cr` : `Generate · ${costs.hooks_titles ?? "…"} cr`} icon={Type} success="Hooks and titles ready" />
+        <AiBtn slug="hooks_titles" label={hooks.length ? `Regenerate · ${costs["hooks_titles"] ?? "…"} cr` : `Generate · ${costs["hooks_titles"] ?? "…"} cr`} icon={Type} success="Hooks and titles ready" />
       }>
         {hooks.length || titles.length ? (
           <div className="grid gap-4 md:grid-cols-2">
@@ -201,8 +201,8 @@ export function WritingPanel({ project, onScenesChanged }: { project: Tables<"pr
 
       <Section number="04" title="Script" action={
         <div className="flex flex-wrap gap-2">
-          <AiBtn slug="full_script" label={`Write script · ${costs.full_script ?? "…"} cr`} icon={FileText} success="Script written" />
-          <AiBtn slug="script_to_scenes" label={`Create scenes · ${costs.script_to_scenes ?? "…"} cr`} icon={Layers} success="Scenes created" />
+          <AiBtn slug="full_script" label={`Write script · ${costs["full_script"] ?? "…"} cr`} icon={FileText} success="Script written" />
+          <AiBtn slug="script_to_scenes" label={`Create scenes · ${costs["script_to_scenes"] ?? "…"} cr`} icon={Layers} success="Scenes created" />
         </div>
       }>
         <div className="rounded-xl border border-border bg-surface p-4">

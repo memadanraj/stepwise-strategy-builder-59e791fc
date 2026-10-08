@@ -19,7 +19,7 @@ let scriptPromise: Promise<void> | undefined;
 function loadTurnstile() {
   if (scriptPromise) return scriptPromise;
   scriptPromise = new Promise<void>((resolve, reject) => {
-    if (window.turnstile) return resolve();
+    if (window["turnstile"]) return resolve();
     const existing = document.querySelector<HTMLScriptElement>('script[data-turnstile="true"]');
     if (existing) {
       existing.addEventListener("load", () => resolve(), { once: true });
@@ -41,15 +41,15 @@ function loadTurnstile() {
 export function TurnstileWidget({ onToken }: { onToken: (token: string | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+  const siteKey = import.meta.env["VITE_TURNSTILE_SITE_KEY"] as string | undefined;
 
   useEffect(() => {
     if (!siteKey || !ref.current) return;
     let cancelled = false;
     loadTurnstile()
       .then(() => {
-        if (cancelled || !ref.current || !window.turnstile) return;
-        widgetId.current = window.turnstile.render(ref.current, {
+        if (cancelled || !ref.current || !window["turnstile"]) return;
+        widgetId.current = window["turnstile"].render(ref.current, {
           sitekey: siteKey,
           callback: (token) => onToken(token),
           "expired-callback": () => onToken(null),

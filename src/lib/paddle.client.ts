@@ -31,11 +31,11 @@ function loadPaddleScript() {
 }
 export async function getPaddle() {
   if (typeof window === "undefined") throw new Error("Paddle Checkout is only available in the browser.");
-  const token = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined;
+  const token = import.meta.env["VITE_PADDLE_CLIENT_TOKEN"] as string | undefined;
   if (!token) throw new Error("Missing VITE_PADDLE_CLIENT_TOKEN environment variable.");
   const paddle = await loadPaddleScript();
   if (!window.__reelforgePaddleInitialized) {
-    const environment = import.meta.env.VITE_PADDLE_ENVIRONMENT as string | undefined;
+    const environment = import.meta.env["VITE_PADDLE_ENVIRONMENT"] as string | undefined;
     paddle.Initialize({ token, ...(environment === "sandbox" ? { environment: "sandbox" as const } : {}) });
     window.__reelforgePaddleInitialized = true;
   }

@@ -47,7 +47,7 @@ function isH3SwallowedErrorBody(body: string): boolean {
 }
 
 function forceHttpsRedirect(request: Request): Response | null {
-  if (process.env.NODE_ENV !== "production") return null;
+  if (process.env["NODE_ENV"] !== "production") return null;
   const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
   const isHttp = forwardedProto === "http" || (!forwardedProto && new URL(request.url).protocol === "http:");
   if (!isHttp) return null;
